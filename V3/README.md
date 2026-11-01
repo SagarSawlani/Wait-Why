@@ -5,7 +5,7 @@ with a caption at each key moment.
 
 ## Run it
 
-From `C:\dream11_projectV3`, with `.venv` active:
+From `C:\dream11_project\V3`, with `.venv` active:
 
 ```
 python app.py
