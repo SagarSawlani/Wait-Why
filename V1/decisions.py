@@ -15,7 +15,7 @@ To add a decision, add one entry to DECISIONS. Nothing else needs to change.
 """
 
 RELEASE = ("release", "Ball released", "the first frame in which the ball has left the bowler's hand")
-SIGNAL = ("umpire_signal", "Umpire's signal", "the first frame in which the umpire is clearly making the signal")
+SIGNAL = ("umpire_signal", "Umpire's signal", "the first frame in which the umpire is visible and clearly making the signal. Players raising their arms are not the umpire, and if the umpire is not shown making it, set this to null")
 PAD = ("ball_hits_pad", "Ball hits the batter", "the first frame in which the ball strikes the batter's pad or body")
 APPEAL = ("appeal", "The appeal", "the first frame in which the fielders are clearly appealing to the umpire")
 CONTACT = ("bat_contact", "Bat meets ball", "the frame in which the bat hits the ball")
@@ -231,7 +231,8 @@ How to read the input:
 - Always answer with a frame number printed on a cell. Never invent or interpolate numbers.
 
 Rules:
-- Judge each moment by what is visible, not by what usually happens.
+- Judge each moment by what is visible, not by what usually happens. The decision and match context
+  tell you what happened, but not that the clip shows it.
 - If a moment does not happen, or is not visible in any cell, set its frame to null. Do not guess.
 - Use the cell closest to the moment. If it falls between two cells, pick the earlier one
   unless the later one is clearly closer.

@@ -1,0 +1,16 @@
+{
+ "title": "Caught Out",
+ "summary": "The batter is out if the ball touches their bat and a fielder catches it before it hits the ground.",
+ "conditions": [
+  "the ball is delivered by the bowler and is not a No ball",
+  "the ball touches the striker’s bat without previously touching a fielder",
+  "the ball is held by a fielder as a fair catch"
+ ],
+ "citations": [
+  "33.1",
+  "33.2"
+ ],
+ "source": "gemini-3.5-flash-lite",
+ "edition": "4th_2026",
+ "level": "beginner"
+}

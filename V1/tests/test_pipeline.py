@@ -54,6 +54,8 @@ def test_decision_is_complete_and_prompts_build(key):
     event = events.from_form(key)
     prompt = detect_prompt(key, event, 2)
     assert all(k in prompt for k in keys)
+    if "umpire_signal" in keys:
+        assert "the umpire is visible" in prompt
     assert d["label"] in rule_prompt(key, "beginner", [{"id": "1.1", "text": "x"}])
     moments = [{"key": keys[0], "label": "L", "evidence": "e"}]
     assert keys[0] in plan_prompt(key, event, {"summary": "s", "conditions": []}, moments)
