@@ -1,0 +1,15 @@
+{
+ "title": "What is a Boundary 4?",
+ "summary": "A boundary 4 is scored when the ball reaches the edge of the field after hitting the ground inside the play area or when it was not hit by the bat.",
+ "conditions": [
+  "The ball touches the ground or an object beyond the boundary",
+  "The ball was first grounded inside the play area OR was not hit by the bat"
+ ],
+ "citations": [
+  "19.4",
+  "19.7"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "4th_2026",
+ "level": "beginner"
+}

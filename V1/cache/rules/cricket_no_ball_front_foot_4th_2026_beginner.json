@@ -1,0 +1,16 @@
+{
+ "title": "Front Foot No Ball",
+ "summary": "A delivery is illegal if the bowler's feet are not positioned correctly during their stride. This results in a one-run penalty for the batting team.",
+ "conditions": [
+  "Back foot must land within the side return crease",
+  "Front foot must land behind the popping crease",
+  "Front foot must land on the correct side of the middle stumps"
+ ],
+ "citations": [
+  "21.14",
+  "21.5"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "4th_2026",
+ "level": "beginner"
+}

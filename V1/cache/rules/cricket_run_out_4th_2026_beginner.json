@@ -1,0 +1,18 @@
+{
+ "title": "Run out",
+ "summary": "A batter is out if they are caught outside their safe zone when the wooden stumps are broken, unless they left to avoid injury or the ball had not touched a fielder first.",
+ "conditions": [
+  "the ball is in play",
+  "the batter is out of their ground",
+  "the wicket is fairly broken by a fielder or the ball",
+  "the batter did not leave to avoid injury",
+  "the ball made contact with a fielder"
+ ],
+ "citations": [
+  "38.1",
+  "38.2"
+ ],
+ "source": "gemini-3.5-flash-lite",
+ "edition": "4th_2026",
+ "level": "beginner"
+}
