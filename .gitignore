@@ -1,0 +1,41 @@
+# Secrets
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# YOLO and other model weights
+*.pt
+*.pth
+*.onnx
+*.weights
+
+# Videos and generated outputs
+videos/
+*.mp4
+V1/jobs/
+V2/jobs/
+tests/out/
+tests/crop1/
+tests/grid1/
+tests/grid_step2/
+tests/grid_stumps/
+tests/repeat1/
+tests/runs/
+tests/runs_gemma/
+tests/runs_lite/
+tests/run_full/
+tests/scan1/
+tests/sheets1/
+
+# Editor and OS
+.vscode/
+.idea/
+.claude/
+Thumbs.db
+.DS_Store
