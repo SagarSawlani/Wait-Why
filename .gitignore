@@ -1,4 +1,4 @@
-# Secrets
+﻿# Secrets
 .env
 .env.*
 
@@ -23,6 +23,7 @@ V2/jobs/
 V3/jobs/
 V4/jobs/
 V5/jobs/
+V6/jobs/
 tests/out/
 tests/crop1/
 tests/grid1/

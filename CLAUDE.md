@@ -120,6 +120,7 @@ Other free options considered: Qwen3-VL (small size, Kaggle/Colab), TimeLens-8B 
 
 ## 7. Where things stand right now
 
+- **`V6/` is the main version; see `V6/README.md`. New work goes there.** It runs on port 5001. V1 to V5 are no longer in the working folder; their committed code is in git.
 - **`V2/` is the multi-sport build: `sports/<sport>/` holds all sport-specific code.** V1 stays as the cricket demo.
 - **`V1/` is the demo build; see `V1/README.md`.** Flask page + pipeline, 24 umpire decisions in `V1/decisions.py`.
   The user supplies and tests all real clips. Do not process videos in `videos/` or run end-to-end tests.
