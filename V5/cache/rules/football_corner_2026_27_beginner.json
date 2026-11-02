@@ -1,0 +1,17 @@
+{
+ "title": "Corner Kick",
+ "summary": "The attacking team restarts play by kicking the ball from the corner arc. Opponents must stay back until the ball moves.",
+ "conditions": [
+  "Ball is placed in the nearest corner area",
+  "Ball is stationary and kicked by an attacker",
+  "Ball is kicked and clearly moves",
+  "Corner flagpost is not moved",
+  "Opponents are at least 9.15m away until the ball moves"
+ ],
+ "citations": [
+  "17.1"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "2026_27",
+ "level": "beginner"
+}
