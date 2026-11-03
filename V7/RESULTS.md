@@ -53,3 +53,14 @@ Times were 30 to 110 seconds per clip on Flash-Lite. Two runs were cut by the PC
 - 3.6 and 3.5 Flash were out of quota on all five keys after the first scored run, so the frontend clips have not been run on 3.6. Re-running clips 2, 5, 6, 15 and 19 on 3.6 after the daily reset (about 13:30 IST) is the next step.
 - Other providers (Mistral, OpenRouter, NVIDIA, Cloudflare) were tested in another session and were far off the true frames, so they were not used.
 - Captions still state a few things the frame cannot prove, such as "the batter is away from safety".
+
+## One clip, three models (bowled, V7 at 480 px; truth release 4-6, stumps 17, bail 21)
+
+| Model | Release | Stumps | Bails | Time |
+|---|---|---|---|---|
+| 3.6 Flash | 6 | 14 | 16 | 78.3 s (zoomed check overloaded, first guesses kept) |
+| 3.5 Flash | 6 | 16 | 18 | 54.1 s (needed 4 tries to get past overload) |
+| 3.5 Flash-Lite | 9 | 27 | 28 | 30.8 s |
+
+3.8 Flash moved to the end of the order, since it rarely answers.
+Full resolution to Gemini scored better on small-object moments in a test, but doubled run time and is not built in yet.

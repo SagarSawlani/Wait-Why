@@ -1,0 +1,14 @@
+{
+ "title": "Blocking Foul",
+ "summary": "A defender makes illegal contact that stops an opponent's path.",
+ "conditions": [
+  "Defender uses hands or body",
+  "Forces opponent off their path"
+ ],
+ "citations": [
+  "12.21"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "nba_2026_27",
+ "level": "beginner"
+}

@@ -35,7 +35,7 @@ Each run is saved in `jobs/<id>/`: `clip.mp4`, `event.json`, `rule.json`, `detec
 - `sports/cricket/decisions.py`: every decision and every prompt. Add one entry to add a decision.
 - `config.py`: models, fallback order, pause length, slow-motion speed.
 
-Models: detection and the zoomed check try `gemini-3.6-flash` twice, `gemini-3.5-flash` twice, `gemini-3.8-flash` once, then `gemini-3.5-flash-lite`.
+Models: detection and the zoomed check try `gemini-3.6-flash` twice, `gemini-3.5-flash` twice, `gemini-3.5-flash-lite` once, then `gemini-3.8-flash`, which is often overloaded.
 Rule and caption text uses `gemini-3.1-flash-lite`.
 
 ## The clip table

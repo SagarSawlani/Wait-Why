@@ -1,0 +1,14 @@
+{
+ "title": "Double Fault",
+ "summary": "You lose the point by missing two serves in a row.",
+ "conditions": [
+  "Serves two bad tries",
+  "Misses both serves"
+ ],
+ "citations": [
+  "24.1"
+ ],
+ "source": "gemini-3.5-flash-lite",
+ "edition": "rules_2026",
+ "level": "beginner"
+}

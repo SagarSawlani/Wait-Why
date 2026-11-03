@@ -14,7 +14,7 @@ FETCH_TIMEOUT = 180    # seconds to cut one library clip from YouTube
 CALL_TIMEOUT = 60      # seconds; a Gemini call taking longer counts as a failed attempt
 
 # Each model is tried this many times, in this order.
-DETECT_CHAIN = [("gemini-3.6-flash", 2), ("gemini-3.5-flash", 2), ("gemini-3.8-flash", 1), ("gemini-3.5-flash-lite", 1)]
+DETECT_CHAIN = [("gemini-3.6-flash", 2), ("gemini-3.5-flash", 2), ("gemini-3.5-flash-lite", 1), ("gemini-3.8-flash", 1)]
 # Rule and caption text does not need vision, and this model has the larger free limit.
 TEXT_CHAIN = [("gemini-3.1-flash-lite", 2), ("gemini-3.5-flash-lite", 1)]
 
