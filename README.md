@@ -23,12 +23,11 @@ takes about 2 to 4 minutes on the free server.
 - [How a fan uses it](#how-a-fan-uses-it)
 - [System architecture](#system-architecture)
 - [The pipeline, stage by stage](#the-pipeline-stage-by-stage)
-- [How we got here: what we tried](#how-we-got-here-what-we-tried)
-- [Running it online for free](#running-it-online-for-free)
 - [Sports and decisions](#sports-and-decisions)
 - [Repository layout](#repository-layout)
 - [Run it locally](#run-it-locally)
 - [Limits](#limits)
+- [Future plans](#future-plans)
 - [AI tools used](#ai-tools-used)
 
 ---
@@ -112,61 +111,6 @@ A busy or out-of-quota model moves the step to the next one, so a run doesn't fa
 
 ---
 
-## How we got here: what we tried
-
-The hard part is **timing**: finding the exact frame where the ball hits the stumps or the pad, in broadcast video
-with camera cuts and zooms. Frame-perfect isn't required (the replay is at 0.5x with pauses), but within 1 to 2
-frames is. On the main test clip the stumps are hit at frame 17.
-
-| Approach | Result |
-|---|---|
-| Hand-written pixel rules (motion in a fixed stumps region, pose "wrist above nose", a COCO "sports ball" detector) | Failed: the camera zooms and pans, pose picked the wrong people, ball detections were noise |
-| Camera compensation (SIFT homography) | Partial: the box followed the stumps but gave a broad motion bump, not a hit |
-| Fine-tuning YOLO on public datasets | Parked: no dataset labels "stumps broken" |
-| Jev on single frames, grids and crops | Good for boxing people, unreliable for the ball, bails and exact timing |
-| Gemma 4 (open model) | Dropped: every image request was refused through the API |
-| **Gemini on numbered contact sheets** | **Best:** stumps 16 or 18 (truth 17), release stable. This became the timing layer |
-
-Then, model by model on the same clips: Gemini 3.6 Flash gave the best frames (stumps 16 on the bowled clip);
-3.5 Flash-Lite is the fastest but was 8 to 10 frames late there (stumps 25 to 28). That is why 3.6 Flash leads the
-order and Flash-Lite is the fallback. Two more layers were added on top: a finer second pass for long clips, and the
-zoomed check on crops. Full test results are in `V9/RESULTS.md`.
-
-Each version is in the git history: V1 (cricket demo) → V2 (multi-sport layout) → V3 (zoomed check) → V4 (basketball,
-tennis, SoccerNet) → V5 (Jev markers) → V6 → V7 (two-pass detection, model order) → V8 / V9 (made safe and small
-enough to run online).
-
----
-
-## Running it online for free
-
-Hugging Face now charges for Docker apps, so the app runs on **Render's free plan**: 512 MB of memory and a tenth of
-a CPU. Getting the pipeline to fit took several changes:
-
-| Problem | What we did | Result |
-|---|---|---|
-| Out of memory: every full-HD frame was held at once | Frames are read only when a stage needs them (`pipeline/frames.py`); freed memory is handed back between stages | 2.3 GB → under 300 MB per run, whatever the clip length |
-| Render was slow on 0.1 CPU | Each slow-motion frame is written once at half the frame rate (same picture timing, half the frames); faster encoder setting; fonts loaded once; output at 720p (detection still uses full size) | Render step 112 s → 53 s |
-| YouTube blocks cloud servers | The 19 library clips are packed with the app (`pack_clips.py`), so the server never downloads from YouTube | Clips load in under a second |
-| Server sleeps after 15 idle minutes | It pings its own health check every 14 minutes (`KEEP_AWAKE_MINUTES`), no AI call | Stays awake |
-
-**Security, since it's on the open internet:**
-
-- A password on every page, with a lockout after 5 wrong tries.
-- A token from the page on every form post, the login included.
-- A strict content policy, so only the page's own script can run.
-- Uploads: at most 300 MB, 1080p and 2 minutes, and they must read as real video.
-- Daily limits: 10 runs a day in total and 3 per login, to protect the free Gemini quota.
-- Each visitor sees only their own results. Their clip, output and job files are deleted when they leave or
-  refresh the page, when the server stops, or 30 minutes after the video is made.
-- API keys live only in the host's settings, never in the code.
-
-**Operations:** a phone or e-mail alert when Gemini 3.6 Flash runs out of quota (`pipeline/notify.py`, via ntfy),
-one log line per run with each stage's time, and a usage report (`V9/usage_report.py`) counting page views, visitors,
-runs and outcomes from the server log.
-
----
-
 ## Sports and decisions
 
 | Sport | Rulebook | Decisions | Examples |
@@ -194,7 +138,7 @@ folder under `V9/sports/` with its decisions, rulebook and prompts; the rest of 
 | [`render.yaml`](render.yaml) | Deploys `V9/` to Render's free plan |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | The original design the build followed |
 | `videos/` | Source clips used while developing |
-| `tests/` | The early experiments from the table above, kept for reference |
+| `tests/` | Early experiments (pixel rules, Jev, Gemini contact sheets), kept for reference |
 
 ## Run it locally
 
@@ -219,6 +163,29 @@ Open http://127.0.0.1:5002. Locally there is no password and no limits, and job 
 - **What the clip doesn't show, the app can't explain:** a spoken call or a decision made off camera gets the rule
   card and a plain replay.
 - **No sound** in the output video.
+
+## Future plans
+
+**Build an annotated dataset of officials' decisions, then train a computer-vision model for the timing.**
+
+Today a large vision model (Gemini) finds the key moments. It works, but it depends on a free daily quota, waits on
+busy servers, and is weakest on small things like the ball or a bail. A model trained for this one job would be
+faster, cheaper and could run without an outside service.
+
+1. **Collect clips of decisions** across the four sports, matched to match data (Cricsheet, StatsBomb) so each clip
+   already knows its decision, players and time.
+2. **Annotate them:** for each clip, the frame of every key moment (release, ball pitches, ball hits pad, stumps hit,
+   flag raised, umpire's signal) and boxes for the objects that matter (ball, stumps, bails, players, officials). The
+   app's own runs give a head start: its Gemini answers become draft labels that annotators correct, instead of
+   labelling from scratch.
+3. **Train a computer-vision model:** an event-spotting model that names the frame of each moment, and an object
+   detector for the ball, stumps and officials, which also places the markers.
+4. **Measure it** against the hand-checked frames (how many frames off, how often a moment is missed) and put it in
+   front of Gemini in the pipeline: the trained model times the moments, Gemini stays for the rule text and captions
+   and as the fallback.
+
+The result would be a faster, quota-free explainer, and a labelled dataset of officials' decisions that does not
+exist publicly today.
 
 ## AI tools used
 
