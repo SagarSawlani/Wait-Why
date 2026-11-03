@@ -16,8 +16,10 @@ venv/
 *.weights
 
 # Videos and generated outputs
-videos/
+videos/**/.cache/
 *.mp4
+# the user's clips in videos/ are tracked (main)
+!videos/**/*.mp4
 # library clips packed for the online app (pack_clips.py); YouTube blocks cloud servers
 !V9/clips/
 !V9/clips/**/

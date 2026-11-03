@@ -1,0 +1,6 @@
+Decision: service fault (use service_fault in V6)
+Match: 2021 US Open women's semi-final, Emma Raducanu v Maria Sakkari
+Source: https://youtu.be/Lg2_-XjjvyY, frames 11049-11255 at 29.97 fps (368.67s-375.54s)
+Label: F3Set test split, far_deuce_serve_-_-_T_-_unforced-err at clip frame 55
+A lone serve that ends the point as an error. F3Set does not say whether it was a first serve or a double fault.
+Clip frames are 0-based. The decision comes from the F3Set label. No call was seen in a 2 fps visual check; audio was not checked.

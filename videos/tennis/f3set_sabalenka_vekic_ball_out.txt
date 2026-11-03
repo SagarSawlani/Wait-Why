@@ -1,0 +1,7 @@
+Decision: ball out (use ball_out in V6)
+Match: 2023 Australian Open women's quarter-final, Aryna Sabalenka v Donna Vekic
+Source: https://youtu.be/9slLFh6h8a0, frames 38507-38676 at 25 fps (1540.28s-1547.04s)
+Label: F3Set test split, near_middle_stroke_bh_gs_CC_-_unforced-err at clip frame 98
+Sabalenka's cross-court backhand misses. F3Set only says unforced error; "ball out" is from a visual check.
+In frames 112-124 the ball travels past the far baseline at the right of the screen and Vekic does not play it.
+Clip frames are 0-based. Audio was not checked.
