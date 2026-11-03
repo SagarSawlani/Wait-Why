@@ -129,7 +129,7 @@ def fetch_clip(clip):
 
 
 def check_clip(path, start=None, end=None):
-    """Refuses a file that is not a video, or one too big to hold in memory. Returns the error, or ''."""
+    """Refuses a file that is not a video, bigger than 1080p, or too long. Returns the error, or ''."""
     try:
         info = normalize.probe(path)
     except ValueError:
@@ -145,10 +145,9 @@ def check_clip(path, start=None, end=None):
         return "could not read the size of this video"
     if pixels > config.MAX_PIXELS:
         return "the video is bigger than 1080p, so send a 1080p or smaller copy"
-    limit = int(config.MAX_FRAME_GB * 1024 ** 3 / (pixels * 3))
-    if frames > limit:
-        return (f"the clip has {frames} frames and the limit at this size is {limit} "
-                f"(about {limit / fps:.0f} s), so send a shorter clip")
+    if frames / fps > config.MAX_CLIP_SECONDS:
+        return (f"the clip is {frames / fps:.0f} s long and the limit is {config.MAX_CLIP_SECONDS} s, "
+                f"so send a shorter clip or set the start and end")
     return ""
 
 

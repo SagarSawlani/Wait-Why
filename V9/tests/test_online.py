@@ -94,12 +94,12 @@ def test_only_the_visitor_who_started_a_job_can_see_it(monkeypatch, tmp_path):
     assert second.get(f"/video/{job}").status_code == 404
 
 
-def test_a_clip_too_big_for_memory_is_refused_and_not_counted(monkeypatch, tmp_path):
+def test_a_clip_too_long_is_refused_and_not_counted(monkeypatch, tmp_path):
     client = online(monkeypatch, tmp_path, probe=lambda path: {
-        "avg_frame_rate": "30/1", "nb_read_packets": 3000, "width": 1920, "height": 1080})
+        "avg_frame_rate": "30/1", "nb_read_packets": 30 * 121, "width": 1920, "height": 1080})
     token = log_in(client)
     res = run(client, token)
-    assert res.status_code == 400 and "frames" in res.get_json()["error"]
+    assert res.status_code == 400 and "121 s long" in res.get_json()["error"]
     assert web.usage["total"] == 0 and os.listdir(config.JOBS_DIR) == []
 
 

@@ -6,10 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 import cv2
 import numpy as np
 import requests
-from PIL import Image
 import config
 import sports
 from pipeline import llm
+from pipeline.frames import Clip
 
 RADIUS = 3
 CELL_W = 640
@@ -48,16 +48,9 @@ def target_for(sport, key):
     return None
 
 
-def load_full(clip):
-    cap = cv2.VideoCapture(clip)
-    frames = []
-    while True:
-        ok, f = cap.read()
-        if not ok:
-            break
-        frames.append(f)
-    cap.release()
-    return frames
+def open_clip(path):
+    """The clip at full size, read as needed: only the frames around each moment are decoded and kept."""
+    return Clip(path)
 
 
 def to_jpg(frame):
@@ -102,9 +95,14 @@ def crop(frame, box):
     return frame[y:y + int(h), x:x + int(w)]
 
 
-def action_image(frames, centre, target, path):
-    """Writes the grid for one moment and returns the frame numbers in it."""
-    idx = [i for i in range(centre - RADIUS, centre + RADIUS + 1) if 0 <= i < len(frames)]
+def window(centre, count):
+    """The frame numbers checked around one moment."""
+    return [i for i in range(centre - RADIUS, centre + RADIUS + 1) if 0 <= i < count]
+
+
+def action_image(frames, idx, target, path):
+    """Writes the grid for one moment from frames ({index: frame}) and returns the frame numbers in it."""
+    idx = [i for i in idx if i in frames]
     if target:
         with ThreadPoolExecutor(len(idx)) as pool:
             boxes = list(pool.map(lambda i: jev_box(frames[i], target), idx))
@@ -167,13 +165,18 @@ def verify(clip, decision, event, detections, job_dir, fps):
     moments = detections["moments"]
     check_dir = os.path.join(job_dir, "check")
     os.makedirs(check_dir, exist_ok=True)
-    frames = load_full(clip)
+    checked = [m for m in moments if not m.get("derived") and m["key"] in definitions]
+    if not checked:
+        return detections
+    video = open_clip(clip)
+    count = len(video)
     paths, lines, windows = [], [], {}
-    for m in moments:
-        if m.get("derived") or m["key"] not in definitions:
+    for m in checked:
+        frames = video.read(window(m["frame"], count))   # one moment's few frames at a time
+        if not frames:
             continue
         path = os.path.join(check_dir, f"{m['key']}.jpg")
-        idx = action_image(frames, m["frame"], target_for(sport, m["key"]), path)
+        idx = action_image(frames, window(m["frame"], count), target_for(sport, m["key"]), path)
         windows[m["key"]] = idx
         paths.append(path)
         lines.append(f"- image {len(paths)}, {m['key']}: {definitions[m['key']]}. Frames {idx[0]} to {idx[-1]}.")
@@ -182,7 +185,7 @@ def verify(clip, decision, event, detections, job_dir, fps):
     shape = ", ".join(f'"{k}": {{"frame": 0, "confidence": 0.0, "evidence": ""}}' for k in windows)
     prompt = "Moments:\n" + "\n".join(lines) + f'\n\nReturn only JSON: {{"moments": {{{shape}}}}}'
     try:
-        data, model = llm.generate(config.DETECT_CHAIN, SYSTEM, [prompt] + [Image.open(p) for p in paths])
+        data, model = llm.generate(config.DETECT_CHAIN, SYSTEM, [prompt] + [llm.image(p) for p in paths])
     except RuntimeError as e:
         print(f"  keeping the first answers: {str(e)[:200]}")
         return detections

@@ -70,7 +70,13 @@ def test_targets_people_not_the_ball():
 def test_gemini_failure_changes_nothing(tmp_path, monkeypatch):
     def fail(*a, **k):
         raise RuntimeError("no")
-    monkeypatch.setattr(verify, "load_full", lambda clip: [np.zeros((90, 160, 3), np.uint8)] * 30)
+    class Fake:
+        def __len__(self):
+            return 30
+
+        def read(self, wanted):
+            return {i: np.zeros((90, 160, 3), np.uint8) for i in wanted}
+    monkeypatch.setattr(verify, "open_clip", lambda clip: Fake())
     monkeypatch.setattr(verify, "jev_box", lambda f, t: None)
     monkeypatch.setattr(verify.llm, "generate", fail)
     detections = {"moments": [moment("release", 10)], "rejected": []}

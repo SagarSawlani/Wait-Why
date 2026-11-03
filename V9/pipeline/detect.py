@@ -3,29 +3,12 @@ All frames are used, including those after a camera cut. Frame numbers are 0-bas
 import json, math, os, statistics
 import cv2
 import numpy as np
-from PIL import Image
 import config
 import sports
 from pipeline import llm
+from pipeline.frames import Clip, frames_at
 
 FONT = cv2.FONT_HERSHEY_SIMPLEX
-
-
-def load_frames(video, width):
-    cap = cv2.VideoCapture(video)
-    frames = []
-    while True:
-        ok, f = cap.read()
-        if not ok:
-            break
-        h, w = f.shape[:2]
-        if width and w > width:   # None keeps the clip's own size
-            f = cv2.resize(f, (width, int(h * width / w)), interpolation=cv2.INTER_AREA)
-        frames.append(f)
-    cap.release()
-    if not frames:
-        raise ValueError("could not read any frames from the clip")
-    return frames
 
 
 def choose_step(frame_count):
@@ -33,27 +16,38 @@ def choose_step(frame_count):
 
 
 def build_sheets(frames, step, out_dir, first=0, last=None):
+    """frames is a frames.Clip (read as needed) or a list. Each sheet is drawn in place and written before the
+    next is started, so only one sheet and one frame are in memory at a time."""
     os.makedirs(out_dir, exist_ok=True)
     idxs = list(range(first, len(frames) if last is None else last + 1, step))
     per_sheet = config.SHEET_COLS * config.SHEET_ROWS
-    paths = []
-    for s in range(0, len(idxs), per_sheet):
-        chunk = idxs[s:s + per_sheet]
-        cells = []
-        for k in chunk:
-            c = frames[k].copy()
-            (tw, th), _ = cv2.getTextSize(str(k), FONT, 1.6, 3)
-            cv2.rectangle(c, (0, 0), (tw + 16, th + 16), (0, 0, 0), -1)
-            cv2.putText(c, str(k), (8, th + 8), FONT, 1.6, (255, 255, 255), 3, cv2.LINE_AA)
-            cv2.rectangle(c, (0, 0), (c.shape[1] - 1, c.shape[0] - 1), (255, 255, 0), 1)
-            cells.append(c)
-        while len(cells) % config.SHEET_COLS:
-            cells.append(np.zeros_like(cells[0]))
-        sheet = np.vstack([np.hstack(cells[r:r + config.SHEET_COLS])
-                           for r in range(0, len(cells), config.SHEET_COLS)])
+    paths, chunk, sheet = [], [], None
+
+    def write():
         p = os.path.join(out_dir, f"sheet_{chunk[0]:05d}_{chunk[-1]:05d}.jpg")
-        cv2.imwrite(p, sheet, [cv2.IMWRITE_JPEG_QUALITY, 92])
+        rows = -(-len(chunk) // config.SHEET_COLS)
+        cv2.imwrite(p, sheet[:rows * cell_h], [cv2.IMWRITE_JPEG_QUALITY, 92])
         paths.append(p)
+
+    for k, frame in frames_at(frames, idxs):
+        c = frame.copy()
+        (tw, th), _ = cv2.getTextSize(str(k), FONT, 1.6, 3)
+        cv2.rectangle(c, (0, 0), (tw + 16, th + 16), (0, 0, 0), -1)
+        cv2.putText(c, str(k), (8, th + 8), FONT, 1.6, (255, 255, 255), 3, cv2.LINE_AA)
+        cv2.rectangle(c, (0, 0), (c.shape[1] - 1, c.shape[0] - 1), (255, 255, 0), 1)
+        if sheet is None:
+            cell_h, cell_w = c.shape[:2]
+            sheet = np.zeros((config.SHEET_ROWS * cell_h, config.SHEET_COLS * cell_w, 3), np.uint8)
+        if not chunk:
+            sheet[:] = 0   # empty cells on the last sheet stay black, as before
+        row, col = divmod(len(chunk), config.SHEET_COLS)
+        sheet[row * cell_h:(row + 1) * cell_h, col * cell_w:(col + 1) * cell_w] = c
+        chunk.append(k)
+        if len(chunk) == per_sheet:
+            write()
+            chunk = []
+    if chunk:
+        write()
     return idxs, paths
 
 
@@ -116,7 +110,7 @@ def ask(frames, step, sheet_dir, decision, event, runs=None, first=0, last=None)
     prompts = sports.decisions(sport)
     keys = [k for k, _, _ in prompts.DECISIONS[decision]["moments"]]
     prompt = prompts.detect_prompt(decision, event, step)
-    images = [Image.open(p) for p in sheets]
+    images = [llm.image(p) for p in sheets]   # the JPEG bytes as they are; no decoded copy in memory
     replies, models = [], []
     for _ in range(runs or config.DETECT_RUNS):
         data, model = llm.generate(config.DETECT_CHAIN, prompts.DETECT_SYSTEM, [prompt] + images)
@@ -138,7 +132,7 @@ def refine_window(moments, step, frame_count):
 
 
 def detect(clip, decision, event, job_dir, fps, runs=None):
-    frames = load_frames(clip, config.CELL_WIDTH)
+    frames = Clip(clip, config.CELL_WIDTH)
     step = choose_step(len(frames))
     sheet_dir = os.path.join(job_dir, "sheets")
     moments, rejected, model, step = ask(frames, step, sheet_dir, decision, event, runs)

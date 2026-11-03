@@ -14,6 +14,14 @@ def parse_json(text):
     return json.loads(text[start:end + 1])
 
 
+def image(path):
+    """A JPEG file as a request part. Sending the bytes avoids the SDK decoding the picture into memory
+    and encoding it again, which it does for a PIL image."""
+    from google.genai import types
+    with open(path, "rb") as f:
+        return types.Part.from_bytes(data=f.read(), mime_type="image/jpeg")
+
+
 def _call(model, system, contents):
     global _client
     from google import genai

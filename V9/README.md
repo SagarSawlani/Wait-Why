@@ -39,7 +39,7 @@ Unit tests (no real clips, no API calls): `pip install pytest`, then `python -m 
 | Clickjacking | The page can only be framed by itself and huggingface.co |
 | Stolen cookies | HttpOnly, Secure, Partitioned; a fresh session at login; 12 hour expiry |
 | Using up the Gemini quota | `DAILY_JOBS` (default 10) for everyone, `VISITOR_DAILY_JOBS` (default 3) per login, at most 3 jobs waiting at once |
-| Huge or crafted uploads | 300 MB at most. ffprobe must read it as a video within 2 minutes, at most 1080p, and its frames must fit in 6 GB of memory. Start and end must be real numbers of seconds |
+| Huge or crafted uploads | 300 MB at most. ffprobe must read it as a video within 2 minutes, at most 1080p and 2 minutes long. Start and end must be real numbers of seconds |
 | Hung processes | ffprobe stops after 2 minutes and ffmpeg after 15; each Gemini call after 3 minutes |
 | Other people's results | A job's status and video are only shown to the login that started it; job IDs are random |
 | Leftover files | Jobs are deleted after 24 hours |
@@ -95,6 +95,21 @@ YouTube often asks cloud servers to "sign in to confirm you're not a bot". If th
 
 If YouTube still refuses, packing the clips with `pack_clips.py` always works. YouTube changes often, so if
 fetching breaks, raise `yt-dlp` in `requirements.txt` to its newest release.
+
+## Memory
+
+Frames are read from the clip as each stage needs them (`pipeline/frames.py`), never the whole clip at once, and the
+contact sheets go to Gemini as their JPEG files. Measured on a 1080p clip with Gemini faked:
+
+| Stage | Before | Now |
+|---|---|---|
+| Detection and zoomed check, 10 s clip | 2,301 MB | 268 MB |
+| Detection, 60 s clip | about 13 GB (would crash) | 262 MB |
+| Render, Python + ffmpeg | 153 + 364 MB | 153 + 122 MB with `LOW_MEMORY=1` |
+
+The contact sheets are byte-for-byte the same as before, so the frames Gemini sees did not change.
+`LOW_MEMORY=1` (set in the Dockerfile) runs the video encoder with 2 threads and no look-ahead: the output file is
+about 50% bigger at the same quality setting. A whole run fits in about 0.5 GB, so small free hosts become possible.
 
 ## How one clip is processed
 

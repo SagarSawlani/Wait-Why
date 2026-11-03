@@ -2,6 +2,7 @@
 A clip that already complies is copied untouched. Otherwise it is encoded once, with everything fixed
 in one command. Frame numbers depend on the frozen clip, so it is never encoded again."""
 import json, os, shutil, subprocess
+import config
 
 PROBE_TIMEOUT = 120    # seconds; a crafted file must not hang the server
 ENCODE_TIMEOUT = 900
@@ -52,6 +53,7 @@ def encode_command(src, dst, info, start=None, end=None):
     # out_range and format also convert full-range sources, which -pix_fmt alone leaves as yuvj420p
     cmd += ["-vf", f"scale=trunc(iw/2)*2:trunc(ih/2)*2:out_range=tv,format=yuv420p,fps={info['avg_frame_rate']}",
             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast",
+            *(config.X264_LOW_MEMORY if config.LOW_MEMORY else []),
             "-c:a", "aac", "-movflags", "+faststart", dst]
     return cmd
 

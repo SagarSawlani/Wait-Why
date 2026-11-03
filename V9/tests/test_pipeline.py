@@ -552,5 +552,6 @@ def test_frames_keep_their_size_unless_a_width_is_set(tmp_path):
     for _ in range(3):
         writer.write(np.zeros((180, 320, 3), np.uint8))
     writer.release()
-    assert detect.load_frames(src, None)[0].shape[:2] == (180, 320)
-    assert detect.load_frames(src, 160)[0].shape[:2] == (90, 160)
+    from pipeline.frames import Clip
+    assert Clip(src, None).read([0])[0].shape[:2] == (180, 320)
+    assert Clip(src, 160).read([0])[0].shape[:2] == (90, 160)

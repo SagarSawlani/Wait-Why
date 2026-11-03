@@ -14,7 +14,7 @@ COPY --chown=app:app . .
 RUN mkdir -p jobs clips/library && chown -R app:app /app
 
 USER app
-ENV PUBLIC=1 ALLOW_FETCH=1 VIDEOS_DIR=/app/clips PYTHONUNBUFFERED=1
+ENV PUBLIC=1 ALLOW_FETCH=1 LOW_MEMORY=1 VIDEOS_DIR=/app/clips PYTHONUNBUFFERED=1
 EXPOSE 7860
 # One process, because the job list lives in memory; threads serve the page while a job runs.
 CMD ["gunicorn", "--workers", "1", "--threads", "8", "--timeout", "900", "--bind", "0.0.0.0:7860", "app:app"]

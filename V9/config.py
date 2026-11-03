@@ -19,7 +19,10 @@ ALLOW_FETCH = os.environ.get("ALLOW_FETCH", "1") == "1"   # cut library clips fr
 # Optional: the text of a cookies.txt from a spare YouTube login, for when YouTube asks a cloud server to sign in.
 YT_COOKIES = os.environ.get("YT_COOKIES", "")
 MAX_UPLOAD_MB = 300
-MAX_FRAME_GB = 6       # every full-size frame is held in memory during detection and the zoomed check; the free Space has 16 GB
+MAX_CLIP_SECONDS = 120 # longer clips take too long and get a coarser frame step; frames are read as needed, so memory is not the limit
+# Small hosts (about 0.5 GB): the video encoder uses 2 threads and no look-ahead, about half the memory, for a bigger file.
+LOW_MEMORY = os.environ.get("LOW_MEMORY", "0") == "1"
+X264_LOW_MEMORY = ["-threads", "2", "-tune", "zerolatency"]
 MAX_PIXELS = 1920 * 1080
 DAILY_JOBS = int(os.environ.get("DAILY_JOBS", "10"))        # all visitors together; keeps the free Gemini quota
 VISITOR_DAILY_JOBS = int(os.environ.get("VISITOR_DAILY_JOBS", "3"))

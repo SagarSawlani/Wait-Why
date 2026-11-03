@@ -8,6 +8,7 @@ import requests
 import config
 import sports
 from pipeline import verify
+from pipeline.frames import Clip
 
 
 def ask(frame, target):
@@ -55,17 +56,8 @@ def choose(frame, options, evidence=""):
 
 
 def read_frames(clip, wanted):
-    cap = cv2.VideoCapture(clip)
-    frames, index = {}, 0
-    while len(frames) < len(wanted):
-        ok, f = cap.read()
-        if not ok:
-            break
-        if index in wanted:
-            frames[index] = f
-        index += 1
-    cap.release()
-    return frames
+    """Only the frames of the steps that get a marker, decoded one at a time."""
+    return Clip(clip).read(wanted)
 
 
 def mark(clip, plan, sport, job_dir):
