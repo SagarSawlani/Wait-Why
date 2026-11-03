@@ -10,9 +10,9 @@ pinned: false
 
 # Why this decision? — V9
 
-V9 is today's V7 pipeline with the protections it needs to go online, built for a free Hugging Face Docker Space.
-The pipeline (detection, zoomed check, captions, markers, render) is the same code as V7. Only the web app,
-the packaging and a few input checks were added. Locally, without `PUBLIC=1`, it behaves like V7.
+V9 is the final version: the detection pipeline (contact sheets, zoomed check, captions, markers, render) with the
+protections it needs to go online. It runs on Render's free plan. Earlier versions (V1 to V8) are in git history.
+Locally, without `PUBLIC=1`, there is no password, no limits, and jobs are kept.
 
 ## Run it locally
 
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Open http://127.0.0.1:5002 (V7 keeps 5001). It reads the API keys from the project's `.env`.
+Open http://127.0.0.1:5002. It reads the API keys from the project's `.env`.
 Locally there is no password, no limits, and old jobs are kept.
 
 Unit tests (no real clips, no API calls): `pip install pytest`, then `python -m pytest tests -q`
@@ -192,4 +192,39 @@ once, then `gemini-3.8-flash`. Frames go to Gemini at the clip's own size. Rule 
 description and a decision key. `file` is optional: the MP4's path inside `videos/`. Locally, a clip without a saved
 MP4 is cut once with `yt-dlp`, online too (see "YouTube online").
 
-The rest (Cricsheet, StatsBomb, sports, limits) is as in `V7/README.md`. Results are in `RESULTS.md`, copied from V7.
+Model test results from development are in `RESULTS.md`.
+
+## Using Cricsheet
+
+1. Find the match at https://cricsheet.org/matches/ and download its JSON.
+2. Add it on the page, with the innings and the scorecard's over.ball, like `12.3`.
+3. Leave the decision on "Take it from Cricsheet", or choose one to double-check the ball.
+
+Cricsheet records scores, not every call. Choose short run, dead ball, not out or play suspended yourself.
+All Cricsheet no-balls read as a general no ball, so choose front foot or height if you know which it was.
+A live version would replace this step with a live feed writing the same event JSON.
+
+## Sports
+
+| Sport | Rulebook | Match data |
+|---|---|---|
+| Cricket | MCC Laws of Cricket | Cricsheet, optional |
+| Football | IFAB Laws of the Game | StatsBomb, optional |
+| Basketball | NBA Official Playing Rules 2026-27 | None yet: choose the decision on the page |
+| Tennis | Rules of Tennis 2026, from Tennis Canada's Rules of the Court | None yet: choose the decision on the page |
+
+To add a sport, add `sports/<sport>/` with `decisions.py`, `events.py`, `laws.py` and its parsed rulebook, then add it
+to `SPORTS` in `app.py` and to the list on the page. `sports/shared.py` gives a new sport its prompts.
+
+Basketball uses NBA rules, so FIBA games can differ. Tennis calls are often only spoken or electronic, so `call`
+can be missing, and the ball is small, so landing frames are the weakest part.
+
+## Limits
+
+- Timing is usually within 1 to 2 frames, because every 2nd frame is sent (more on longer clips).
+- The output video has no sound.
+- Markers show only during a pause, because a box fits one frame. They need `TYPESAFE_API_KEY`; without it the video has none.
+- Basketball and tennis have passed unit tests only, with no real clip yet.
+- Limited-overs wides, bouncer limits and DRS come from competition rules, not the Laws, so the app cannot quote them.
+- Laws: 2022 edition for matches before 1 October 2026, and the 2026 edition otherwise.
+

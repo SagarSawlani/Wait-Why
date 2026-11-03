@@ -1,9 +1,0 @@
-flask
-google-genai
-numpy
-opencv-python
-pillow
-pypdf
-pytest
-python-docx
-python-dotenv

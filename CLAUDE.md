@@ -131,11 +131,8 @@ Other free options considered: Qwen3-VL (small size, Kaggle/Colab), TimeLens-8B 
   (Render service `srv-dbl0ol61egvs7398ejlg`, Singapore, free plan, auto-deploy off: deploy by API or dashboard).
   Its env vars (`APP_PASSWORD`, `GEMINI_API_KEY`, `TYPESAFE_API_KEY`, `SECRET_KEY`) are set in Render only, never in
   the repo. The user should rotate the keys and the Render API key that were pasted in chat.
-- **`V7/` is the latest pipeline: two-pass detection and 3.6 Flash first. Results are in `V7/RESULTS.md`.**
-- **`V6/` is the main version; see `V6/README.md`.** It runs on port 5001. V1 to V5 are no longer in the working folder; their committed code is in git.
-- **`V2/` is the multi-sport build: `sports/<sport>/` holds all sport-specific code.** V1 stays as the cricket demo.
-- **`V1/` is the demo build; see `V1/README.md`.** Flask page + pipeline, 24 umpire decisions in `V1/decisions.py`.
-  The user supplies and tests all real clips. Do not process videos in `videos/` or run end-to-end tests.
+- **V9 is the only version in the working tree (2026-11-04).** V1 to V8 were removed from `main`; their code is in git
+  history. The user supplies and tests all real clips. Do not process videos in `videos/` or run end-to-end tests.
   Older notes below are history.
 
 - **Gemma dropped.** `gemma_probe.py` on gemma-4-26b-a4b-it: text worked, but every image request failed

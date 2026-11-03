@@ -24,15 +24,6 @@ videos/**/.cache/
 !V9/clips/
 !V9/clips/**/
 !V9/clips/**/*.mp4
-V1/jobs/
-V2/jobs/
-V3/jobs/
-V4/jobs/
-V5/jobs/
-V6/jobs/
-V7/jobs/
-V8/jobs/
-V8/clips/
 V9/jobs/
 V9/selected/
 tests/out/
