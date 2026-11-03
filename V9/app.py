@@ -5,6 +5,7 @@ import atexit, datetime, glob, hmac, json, math, os, re, secrets, shutil, subpro
 from flask import (Flask, abort, g, jsonify, redirect, render_template, request, send_from_directory, session,
                    url_for)
 from werkzeug.middleware.proxy_fix import ProxyFix
+import requests
 import config
 import sports
 from sports.cricket.events import OVER_BALL_RE
@@ -557,6 +558,21 @@ def video(job_id):
     own_job(job_id)
     return send_from_directory(os.path.join(config.JOBS_DIR, job_id), "output.mp4", conditional=True)
 
+
+def keep_awake(url, minutes, wait=time.sleep):
+    """Asks the server's own public /healthz every `minutes`, so the host sees a request and does not put it to
+    sleep. Only the health check is called: no AI model, no usage line. Runs until the server stops."""
+    target = url.rstrip("/") + "/healthz"
+    while True:
+        wait(minutes * 60)
+        try:
+            requests.get(target, timeout=30)
+        except requests.RequestException as e:
+            print(f"  keep-awake ping failed: {str(e)[:120]}")
+
+
+if config.KEEP_AWAKE_MINUTES > 0 and config.KEEP_AWAKE_URL:
+    threading.Thread(target=keep_awake, args=(config.KEEP_AWAKE_URL, config.KEEP_AWAKE_MINUTES), daemon=True).start()
 
 if config.TEMP_FILES:   # locally (TEMP_FILES=0 by default) jobs are kept as a record
     wipe_all()   # anything left by a crash or a hard stop

@@ -1,13 +1,12 @@
-# Why this decision?
+# Wait, Why?
 
-Fans see an official's call during a live match but not the reason for it. Press **Why this decision?** on a clip of
+Fans see an official's call during a live match but not the reason for it. Give **Wait, Why?** a clip of
 the call and you get the rule in plain words for beginners, then a 0.5x replay that pauses at each key moment with a
 caption and a marker on the action. It covers cricket, football, basketball and tennis.
 
 **Live app:** https://why-this-decision.onrender.com (password-protected; the password is shared with evaluators
-separately). Everything runs live: each clip is analysed when you press the button, nothing is precomputed. The
-first visit after a quiet spell takes about a minute while the free server wakes up, and a run takes about 2 to 4
-minutes.
+separately). Everything runs live: each clip is analysed when you press the button, nothing is precomputed. A run
+takes about 2 to 4 minutes. The server pings itself every 14 minutes so the free plan does not put it to sleep.
 
 ## How it works
 

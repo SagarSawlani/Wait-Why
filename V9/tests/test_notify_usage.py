@@ -73,3 +73,21 @@ def test_report_counts_visitors_runs_and_outcomes():
     assert "Page views:        2" in text and "Visitors:          2" in text
     assert "Runs started:      2" in text and "1 done, 1 failed" in text and "Refused (limits):  1" in text
     assert "cricket / lbw" in text and "upload" in text and "2026-11-04" in text   # 01:33 IST
+
+
+def test_keep_awake_pings_only_the_health_check(monkeypatch):
+    calls, waits = [], []
+
+    class Stop(Exception):
+        pass
+
+    def wait(seconds):
+        waits.append(seconds)
+        if len(waits) > 2:
+            raise Stop
+    monkeypatch.setattr(web.requests, "get", lambda url, timeout: calls.append(url))
+    try:
+        web.keep_awake("https://why-this-decision.onrender.com/", 14, wait)
+    except Stop:
+        pass
+    assert waits[:2] == [840, 840] and calls == ["https://why-this-decision.onrender.com/healthz"] * 2

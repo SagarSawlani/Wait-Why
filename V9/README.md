@@ -1,5 +1,5 @@
 ---
-title: Why this decision
+title: Wait, Why?
 emoji: 🏏
 colorFrom: yellow
 colorTo: gray
@@ -8,7 +8,7 @@ app_port: 7860
 pinned: false
 ---
 
-# Why this decision? — V9
+# Wait, Why? — V9
 
 V9 is the final version: the detection pipeline (contact sheets, zoomed check, captions, markers, render) with the
 protections it needs to go online. It runs on Render's free plan. Earlier versions (V1 to V8) are in git history.
@@ -56,7 +56,8 @@ per-visitor count (the daily total still holds). Change `APP_PASSWORD` in the Sp
 
 Hugging Face now needs a paid PRO plan for Docker Spaces, so Render is the free host. Its free plan has 512 MB of
 memory and 0.1 CPU: V9 fits (peak about 400 MB), but a run takes several minutes. It sleeps after 15 minutes without
-visitors, which also wipes every visitor's files, and the first visit after that waits about a minute for it to wake.
+requests (which also wipes every visitor's files). Set `KEEP_AWAKE_MINUTES=14` and the server asks its own `/healthz`
+that often, so it stays awake; this uses about 720 of the plan's 750 free hours a month, so keep it to one service.
 
 1. Sign up at https://render.com with GitHub and allow it to read this repository.
 2. **New → Blueprint**, choose this repository and the branch with V9 on it. Render reads `render.yaml` at the

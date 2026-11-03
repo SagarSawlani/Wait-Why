@@ -36,6 +36,10 @@ LOGIN_TRIES = 5        # wrong passwords per address before a 15 minute wait
 # they refresh or leave the page, when the server stops, or TEMP_MINUTES after the output video is made.
 TEMP_FILES = os.environ.get("TEMP_FILES", "1" if PUBLIC else "0") == "1"
 TEMP_MINUTES = 30
+# Render's free plan sleeps after 15 minutes without requests. With KEEP_AWAKE_MINUTES set (e.g. 14), the server
+# asks its own public /healthz that often, which counts as a request. No AI call is made. 0 = off (the default).
+KEEP_AWAKE_MINUTES = int(os.environ.get("KEEP_AWAKE_MINUTES", "0") or 0)
+KEEP_AWAKE_URL = os.environ.get("KEEP_AWAKE_URL") or os.environ.get("RENDER_EXTERNAL_URL", "")   # Render sets the latter
 SELECTED_DIR = os.path.join(ROOT, "selected")   # library clips downloaded for one visitor
 
 CALL_TIMEOUT = 180     # seconds; a Gemini call taking longer counts as a failed attempt. Full-size sheets need the time

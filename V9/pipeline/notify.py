@@ -44,7 +44,7 @@ def quota_reached(model, now=None, send=None):
     message = (f"{model} reached its free quota at {now.astimezone(IST):%H:%M} IST"
                f"{f' (key ending {key[-6:]})' if key else ''}. Runs now use the next model in the order. "
                f"The quota comes back at about {next_reset(now):%H:%M} IST.")
-    headers = {"Title": "Why this decision?: Gemini quota reached", "Tags": "warning"}
+    headers = {"Title": "Wait, Why?: Gemini quota reached", "Tags": "warning"}
     if os.environ.get("NOTIFY_EMAIL", "").strip():
         headers["Email"] = os.environ["NOTIFY_EMAIL"].strip()
     # in the background, so a slow alert never delays the run
