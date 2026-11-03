@@ -120,7 +120,9 @@ Other free options considered: Qwen3-VL (small size, Kaggle/Colab), TimeLens-8B 
 
 ## 7. Where things stand right now
 
-- **`V8/` (V7 hardened for a Hugging Face Space) was removed on 2026-11-03; its code is in git history.**
+- **`V9/` is the deployable build: current V7 pipeline + V8's online protections (password, CSRF incl. login, nonce CSP,
+  job caps, upload checks, ffmpeg timeouts, pinned deps), Docker for a free Hugging Face Space. See `V9/README.md`.
+  Port 5002 locally. V8 (an older copy of the same idea) was removed on 2026-11-03 and is in git history.**
 - **`V7/` is the latest pipeline: two-pass detection and 3.6 Flash first. Results are in `V7/RESULTS.md`.**
 - **`V6/` is the main version; see `V6/README.md`.** It runs on port 5001. V1 to V5 are no longer in the working folder; their committed code is in git.
 - **`V2/` is the multi-sport build: `sports/<sport>/` holds all sport-specific code.** V1 stays as the cricket demo.

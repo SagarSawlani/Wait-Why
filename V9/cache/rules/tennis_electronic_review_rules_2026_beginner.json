@@ -1,0 +1,15 @@
+{
+ "title": "Electronic Line Review",
+ "summary": "Players can ask to check a call using technology if they disagree.",
+ "conditions": [
+  "Challenge a fault or out call",
+  "Request immediately and clearly",
+  "Stop playing during the rally"
+ ],
+ "citations": [
+  "33.1"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "rules_2026",
+ "level": "beginner"
+}

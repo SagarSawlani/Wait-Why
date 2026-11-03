@@ -1,0 +1,15 @@
+{
+ "title": "Ball Out",
+ "summary": "A ball is 'in' if any part of it touches the line marking the court. You lose the point if your shot lands outside the court boundaries.",
+ "conditions": [
+  "Ball hits the ground outside the correct court",
+  "Ball hits a permanent fixture before it bounces"
+ ],
+ "citations": [
+  "12.1",
+  "24.1"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "rules_2026",
+ "level": "beginner"
+}

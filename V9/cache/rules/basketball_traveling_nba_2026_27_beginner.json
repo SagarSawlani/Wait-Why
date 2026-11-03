@@ -1,0 +1,15 @@
+{
+ "title": "Traveling",
+ "summary": "You cannot move your feet more than two steps while holding the ball.",
+ "conditions": [
+  "Took more than two steps",
+  "Moved pivot foot before starting dribble",
+  "Lifted pivot foot without shooting or passing"
+ ],
+ "citations": [
+  "10.13"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "nba_2026_27",
+ "level": "beginner"
+}
