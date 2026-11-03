@@ -416,8 +416,11 @@ def test_render_makes_a_playable_clip_with_pauses(tmp_path):
     render.render(src, p, {"width": 320, "height": 180, "fps": 10, "fps_rational": "10/1", "frames": 10}, out)
     info = normalize.probe(out)
     assert normalize.problems(info) == []
-    expected = 60 + 30 + 10 * config.SLOWDOWN + 50   # intro + pause + slowed clip + end card
-    assert int(info["nb_read_packets"]) == expected
+    # intro 6 s + pause 3 s + 10 clip frames at half speed (2 s) + end card 5 s = 16 s, whatever the frame rate
+    seconds = config.INTRO_SECONDS + config.PAUSE_SECONDS + 10 * config.SLOWDOWN / 10 + 5
+    rate = normalize.rate(info["avg_frame_rate"])
+    assert rate == 10 / config.SLOWDOWN   # each clip frame is written once, at the slowed-down rate
+    assert int(info["nb_read_packets"]) / rate == seconds
 
 
 def test_normalize_keeps_a_compliant_file_and_fixes_a_bad_one(tmp_path):
