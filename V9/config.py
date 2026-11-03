@@ -15,7 +15,9 @@ FETCH_TIMEOUT = 180    # seconds to cut one library clip from YouTube
 PUBLIC = os.environ.get("PUBLIC") == "1"
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
 SECRET_KEY = os.environ.get("SECRET_KEY", "")   # empty: a new random key, so logins end on restart
-ALLOW_FETCH = os.environ.get("ALLOW_FETCH", "0" if PUBLIC else "1") == "1"   # YouTube blocks most cloud servers
+ALLOW_FETCH = os.environ.get("ALLOW_FETCH", "1") == "1"   # cut library clips from YouTube on first use
+# Optional: the text of a cookies.txt from a spare YouTube login, for when YouTube asks a cloud server to sign in.
+YT_COOKIES = os.environ.get("YT_COOKIES", "")
 MAX_UPLOAD_MB = 300
 MAX_FRAME_GB = 6       # every full-size frame is held in memory during detection and the zoomed check; the free Space has 16 GB
 MAX_PIXELS = 1920 * 1080

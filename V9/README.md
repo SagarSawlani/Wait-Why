@@ -46,15 +46,16 @@ Unit tests (no real clips, no API calls): `pip install pytest`, then `python -m 
 | Error details | The page shows a plain message; details go only to the server log |
 | API keys | Only from the Space's secrets. `.env` is never copied into the image, and keys never reach the browser |
 | Changing dependencies | Every package is pinned to a tested version |
-| Container | Runs as an unprivileged user (uid 1000), one gunicorn worker, no yt-dlp |
+| Container | Runs as an unprivileged user (uid 1000), one gunicorn worker |
+| YouTube downloads | Only clips listed in `library.json` are ever fetched, by an 11-character video ID; a visitor can never make the server download a link of their own. 300 MB and 3 minutes at most per clip, no `--exec`, partial files deleted, and the fetched clip still passes the same upload checks before a run |
 
 What it does not protect against: anyone with the password can share it, and logging out and in again gives a new
 per-visitor count (the daily total still holds). Change `APP_PASSWORD` in the Space's secrets to cut everyone off.
 
 ## Deploy to a Hugging Face Space (free)
 
-1. On your computer, from `V9`: `python pack_clips.py`. It copies the library clips into `clips/` and leaves out any
-   that would be refused online.
+1. Optional but recommended, on your computer, from `V9`: `python pack_clips.py`. It copies the library clips into
+   `clips/`, so they are in the image and never need YouTube online. Clips left out are fetched from YouTube on first use.
 2. Create a Space at https://huggingface.co/new-space: SDK **Docker**, hardware **CPU basic (free)**.
    Choose **Private** if only you will open it; choose **Public** if evaluators should reach it (the password still
    guards the app, but a public Space shows its files, the clips included).
@@ -64,6 +65,7 @@ per-visitor count (the daily total still holds). Change `APP_PASSWORD` in the Sp
    - `TYPESAFE_API_KEY`: for the markers (optional; without it there are none)
    - `APP_PASSWORD`: a long random password, sent only to the people who should use it
    - `SECRET_KEY`: a long random string, so logins survive a restart (optional)
+   - `YT_COOKIES`: only if YouTube refuses the Space (see below)
    - `DAILY_JOBS` and `VISITOR_DAILY_JOBS` as variables, if the defaults do not fit
 4. Upload from `V9` (needs `pip install huggingface_hub` and `hf auth login` with a write token):
 
@@ -77,6 +79,22 @@ A random password or key: `python -c "import secrets; print(secrets.token_urlsaf
 
 Limits of the free Space: it sleeps after about two days without visitors and takes a minute or two to wake, its disk
 is wiped on restart (jobs and the daily counts start again), and a run takes several minutes on its 2 CPUs.
+
+## YouTube online
+
+The clip table plays each YouTube section in the visitor's own browser, as before. When a clip is selected and is not
+already in `clips/`, the server cuts that section with `yt-dlp` the first time, saves it, and reuses it after that
+(until the Space restarts and its disk is wiped). To turn this off, set the variable `ALLOW_FETCH` to `0`.
+
+YouTube often asks cloud servers to "sign in to confirm you're not a bot". If the Space log shows that:
+
+1. Make a **spare** Google account, not your own (YouTube can block an account used from a server).
+2. Signed in with it, export the youtube.com cookies as `cookies.txt` with a cookies-export browser extension.
+3. Paste the whole file into a Space secret named `YT_COOKIES`. The app writes it to a private file (only the app
+   user can read it) and passes it to yt-dlp. It is never sent to the browser.
+
+If YouTube still refuses, packing the clips with `pack_clips.py` always works. YouTube changes often, so if
+fetching breaks, raise `yt-dlp` in `requirements.txt` to its newest release.
 
 ## How one clip is processed
 
@@ -105,6 +123,6 @@ once, then `gemini-3.8-flash`. Frames go to Gemini at the clip's own size. Rule 
 
 "Select from here" lists the clips in `library.json`: a YouTube ID, the start and end in seconds, the sport, a
 description and a decision key. `file` is optional: the MP4's path inside `videos/`. Locally, a clip without a saved
-MP4 is cut once with `yt-dlp`. Online, only the clips in `clips/` are listed.
+MP4 is cut once with `yt-dlp`, online too (see "YouTube online").
 
 The rest (Cricsheet, StatsBomb, sports, limits) is as in `V7/README.md`. Results are in `RESULTS.md`, copied from V7.

@@ -1,7 +1,7 @@
 """Web page: upload an MP4, choose the inputs, get the explained video back.
 Run locally: python app.py, then open http://127.0.0.1:5002
 Online (PUBLIC=1) every page needs APP_PASSWORD, and jobs are capped per day and per visitor."""
-import datetime, hmac, json, math, os, re, secrets, shutil, subprocess, threading, time, traceback, uuid
+import datetime, glob, hmac, json, math, os, re, secrets, shutil, subprocess, tempfile, threading, time, traceback, uuid
 from flask import (Flask, abort, g, jsonify, redirect, render_template, request, send_from_directory, session,
                    url_for)
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -24,6 +24,8 @@ if config.PUBLIC:
     app.config.update(SESSION_COOKIE_SECURE=True, SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_PARTITIONED=True)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 JOB_ID_RE = re.compile(r"^[0-9a-f]{12}$")
+YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+_cookies_path = None
 jobs = {}
 SPORTS = ["cricket", "football", "basketball", "tennis"]
 one_at_a_time = threading.Lock()   # jobs share the daily Gemini limit
@@ -76,25 +78,53 @@ def library_clip(number):
     return LIBRARY[int(number) - 1]
 
 
+def cookies_file():
+    """Writes the YT_COOKIES secret to a private file once and returns its path, or None.
+    yt-dlp rewrites the file it is given, so the secret itself is never touched."""
+    global _cookies_path
+    if not config.YT_COOKIES:
+        return None
+    if _cookies_path is None:
+        fd, path = tempfile.mkstemp(prefix="yt-cookies-", suffix=".txt")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(config.YT_COOKIES.replace("\\n", "\n"))   # also accepts a one-line paste with \n
+        os.chmod(path, 0o600)
+        _cookies_path = path
+    return _cookies_path
+
+
 def fetch_clip(clip):
-    """Cut the clip from YouTube the first time it is used; after that the saved MP4 stays frozen."""
+    """Cut the clip from YouTube the first time it is used; after that the saved MP4 stays frozen.
+    Only clips listed in library.json are ever fetched, never a link typed by a visitor."""
     path = os.path.join(config.VIDEOS_DIR, library_file(clip))
     with fetching:
         if os.path.isfile(path):
             return path
         if not config.ALLOW_FETCH:
             raise RuntimeError("this clip is not on the server, so choose another or upload an MP4")
+        if not YOUTUBE_ID_RE.match(str(clip.get("youtube", ""))):
+            raise RuntimeError("this clip has no valid YouTube ID")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         cmd = ["yt-dlp", "--no-playlist", "--no-warnings", "-f", "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/b[ext=mp4]",
                "--merge-output-format", "mp4", "--download-sections", f"*{clip['start']}-{clip['end'] or 'inf'}",
-               "--force-keyframes-at-cuts", "-o", path, "--", f"https://youtu.be/{clip['youtube']}"]
+               "--force-keyframes-at-cuts", "--max-filesize", f"{config.MAX_UPLOAD_MB}M", "--no-exec", "-o", path]
+        if cookies_file():
+            cmd += ["--cookies", cookies_file()]
+        cmd += ["--", f"https://youtu.be/{clip['youtube']}"]
         try:
             done = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
                                   timeout=config.FETCH_TIMEOUT)
+            detail = done.stderr.strip()[-300:] if done.returncode or not os.path.isfile(path) else ""
         except (OSError, subprocess.TimeoutExpired) as e:
-            raise RuntimeError(f"could not get this clip from YouTube: {e}")
-        if done.returncode or not os.path.isfile(path):
-            raise RuntimeError(f"could not get this clip from YouTube: {done.stderr.strip()[-300:]}")
+            detail = str(e)[-300:]
+        if detail:
+            for leftover in glob.glob(glob.escape(path) + "*"):   # partial downloads would look like a frozen clip
+                os.remove(leftover)
+            print(f"  YouTube fetch failed for {clip['youtube']}: {detail}")
+            if config.PUBLIC:   # details stay in the server log
+                raise RuntimeError("YouTube did not send this clip right now, so try again later, "
+                                   "choose another, or upload an MP4")
+            raise RuntimeError(f"could not get this clip from YouTube: {detail}")
     return path
 
 

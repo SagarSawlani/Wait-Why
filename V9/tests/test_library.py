@@ -9,9 +9,9 @@ def fake_library(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "VIDEOS_DIR", str(tmp_path))
     monkeypatch.setattr(config, "JOBS_DIR", str(tmp_path / "jobs"))
     monkeypatch.setattr(web, "run_job", lambda *args: None)
-    monkeypatch.setattr(web, "LIBRARY", [{"youtube": "abc", "start": 0, "end": None, "sport": "tennis",
+    monkeypatch.setattr(web, "LIBRARY", [{"youtube": "abcdefghijk", "start": 0, "end": None, "sport": "tennis",
                                           "decision": "ball_out", "description": "A serve", "file": "a.mp4"},
-                                         {"youtube": "def", "start": 5, "end": 9, "sport": "tennis",
+                                         {"youtube": "defdefdef_-", "start": 5, "end": 9, "sport": "tennis",
                                           "decision": "ball_out", "description": "New"}])
     (tmp_path / "a.mp4").write_bytes(b"clip bytes")
     return web.app.test_client()
@@ -25,6 +25,9 @@ def fake_yt_dlp(monkeypatch, returncode=0):
         if not returncode:
             with open(cmd[cmd.index("-o") + 1], "wb") as f:
                 f.write(b"cut bytes")
+        else:   # a failed download can leave a part file behind
+            with open(cmd[cmd.index("-o") + 1] + ".part", "wb") as f:
+                f.write(b"half")
         return subprocess.CompletedProcess(cmd, returncode, "", "video unavailable")
     monkeypatch.setattr(web.subprocess, "run", run)
     return calls
@@ -45,7 +48,7 @@ def test_library_has_several_different_decisions_per_sport():
 def test_page_embeds_the_section_data_without_showing_times(monkeypatch, tmp_path):
     client = fake_library(monkeypatch, tmp_path)
     page = client.get("/").get_data(as_text=True)
-    assert "youtu.be/abc" in page and "Select from here" in page
+    assert "youtu.be/abcdefghijk" in page and "Select from here" in page
     assert 'data-start="5" data-end="9"' in page
 
 
@@ -63,7 +66,7 @@ def test_new_clip_is_cut_once_with_its_section(monkeypatch, tmp_path):
     assert client.get("/library/2").data == b"cut bytes"
     assert client.get("/library/2").data == b"cut bytes"
     assert len(calls) == 1
-    assert "*5-9" in calls[0] and calls[0][-1] == "https://youtu.be/def"
+    assert "*5-9" in calls[0] and calls[0][-1] == "https://youtu.be/defdefdef_-"
 
 
 def test_failed_cut_is_reported(monkeypatch, tmp_path):
@@ -93,3 +96,40 @@ def test_run_still_needs_a_clip(monkeypatch, tmp_path):
     client = fake_library(monkeypatch, tmp_path)
     res = client.post("/run", data={"sport": "tennis", "decision": "ball_out"})
     assert res.status_code == 400 and res.get_json()["error"] == "upload an MP4 file"
+
+
+def test_a_failed_cut_leaves_no_partial_file(monkeypatch, tmp_path):
+    client = fake_library(monkeypatch, tmp_path)
+    fake_yt_dlp(monkeypatch, returncode=1)
+    client.get("/library/2")
+    assert os.listdir(tmp_path / "library") == []
+
+
+def test_online_a_failed_cut_hides_the_details(monkeypatch, tmp_path):
+    client = fake_library(monkeypatch, tmp_path)
+    monkeypatch.setattr(config, "PUBLIC", True)
+    fake_yt_dlp(monkeypatch, returncode=1)
+    res = client.get("/library/2")
+    assert res.status_code == 502 and "unavailable" not in res.get_json()["error"]
+
+
+def test_only_a_real_youtube_id_is_ever_fetched(monkeypatch, tmp_path):
+    client = fake_library(monkeypatch, tmp_path)
+    calls = fake_yt_dlp(monkeypatch)
+    web.LIBRARY[1]["youtube"] = "--exec=rm -rf"
+    assert client.get("/library/2").status_code == 502
+    assert calls == []
+
+
+def test_cookies_secret_goes_to_a_private_file(monkeypatch, tmp_path):
+    client = fake_library(monkeypatch, tmp_path)
+    monkeypatch.setattr(config, "YT_COOKIES", "# Netscape HTTP Cookie File\\n.youtube.com\tTRUE")
+    monkeypatch.setattr(web, "_cookies_path", None)
+    calls = fake_yt_dlp(monkeypatch)
+    client.get("/library/2")
+    path = calls[0][calls[0].index("--cookies") + 1]
+    assert oct(os.stat(path).st_mode & 0o777) == "0o600"
+    with open(path, encoding="utf-8") as f:
+        assert f.read().startswith("# Netscape HTTP Cookie File\n.youtube.com")
+    assert calls[0][-2] == "--" and "--cookies" in calls[0][:-2]
+    os.remove(path)
