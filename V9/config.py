@@ -28,7 +28,11 @@ DAILY_JOBS = int(os.environ.get("DAILY_JOBS", "10"))        # all visitors toget
 VISITOR_DAILY_JOBS = int(os.environ.get("VISITOR_DAILY_JOBS", "3"))
 MAX_WAITING = 3        # jobs queued or running at once
 LOGIN_TRIES = 5        # wrong passwords per address before a 15 minute wait
-JOB_HOURS = 24         # job folders older than this are deleted
+# Temporary files (on online by default): a visitor's selected clip, upload, output and job files are deleted when
+# they refresh or leave the page, when the server stops, or TEMP_MINUTES after the output video is made.
+TEMP_FILES = os.environ.get("TEMP_FILES", "1" if PUBLIC else "0") == "1"
+TEMP_MINUTES = 30
+SELECTED_DIR = os.path.join(ROOT, "selected")   # library clips downloaded for one visitor
 
 CALL_TIMEOUT = 180     # seconds; a Gemini call taking longer counts as a failed attempt. Full-size sheets need the time
 

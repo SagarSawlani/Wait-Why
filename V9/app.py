@@ -1,7 +1,7 @@
 """Web page: upload an MP4, choose the inputs, get the explained video back.
 Run locally: python app.py, then open http://127.0.0.1:5002
 Online (PUBLIC=1) every page needs APP_PASSWORD, and jobs are capped per day and per visitor."""
-import datetime, glob, hmac, json, math, os, re, secrets, shutil, subprocess, tempfile, threading, time, traceback, uuid
+import atexit, datetime, glob, hmac, json, math, os, re, secrets, shutil, subprocess, tempfile, threading, time, traceback, uuid
 from flask import (Flask, abort, g, jsonify, redirect, render_template, request, send_from_directory, session,
                    url_for)
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -93,10 +93,10 @@ def cookies_file():
     return _cookies_path
 
 
-def fetch_clip(clip):
-    """Cut the clip from YouTube the first time it is used; after that the saved MP4 stays frozen.
+def fetch_clip(clip, path=None):
+    """Cut the clip from YouTube into path, unless it is already there; then the saved MP4 stays frozen.
     Only clips listed in library.json are ever fetched, never a link typed by a visitor."""
-    path = os.path.join(config.VIDEOS_DIR, library_file(clip))
+    path = path or os.path.join(config.VIDEOS_DIR, library_file(clip))
     with fetching:
         if os.path.isfile(path):
             return path
@@ -126,6 +126,27 @@ def fetch_clip(clip):
                                    "choose another, or upload an MP4")
             raise RuntimeError(f"could not get this clip from YouTube: {detail}")
     return path
+
+
+def clip_path(number, clip):
+    """The file a library clip is read from. A clip packed with the app (or in the local videos folder) is used as
+    it is. With TEMP_FILES, any other clip is downloaded for this visitor only, and deleted with their files."""
+    saved = os.path.join(config.VIDEOS_DIR, library_file(clip))
+    if os.path.isfile(saved) or not config.TEMP_FILES:
+        return fetch_clip(clip, saved)
+    os.makedirs(config.SELECTED_DIR, exist_ok=True)
+    target = os.path.join(config.SELECTED_DIR, f"{visitor()}_{int(number)}.mp4")
+    for old in glob.glob(os.path.join(config.SELECTED_DIR, f"{visitor()}_*")):
+        if old != target:   # one selected clip per visitor
+            remove(old)
+    return fetch_clip(clip, target)
+
+
+def remove(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
 
 
 def check_clip(path, start=None, end=None):
@@ -195,27 +216,78 @@ def release_job():
         usage["visitors"][visitor()] -= 1
 
 
-def clean_old_jobs():
-    cutoff = time.time() - config.JOB_HOURS * 3600
-    if not os.path.isdir(config.JOBS_DIR):
+def delete_job(job_id):
+    """Deletes a job's folder (input, output and every file made on the way) and forgets the job."""
+    shutil.rmtree(os.path.join(config.JOBS_DIR, job_id), ignore_errors=True)
+    with counting:
+        jobs.pop(job_id, None)
+
+
+def forget_visitor(owner):
+    """The visitor refreshed or left the page: deletes their selected clip and their finished jobs.
+    A job still running is deleted as soon as it ends, since nobody is left to see it."""
+    if not config.TEMP_FILES or not owner:
         return
-    for name in os.listdir(config.JOBS_DIR):
-        path = os.path.join(config.JOBS_DIR, name)
-        with counting:
-            busy = jobs.get(name, {}).get("state") in ("queued", "running")
-        if not busy and os.path.isdir(path) and os.path.getmtime(path) < cutoff:
-            shutil.rmtree(path, ignore_errors=True)
-            with counting:
-                jobs.pop(name, None)
+    for path in glob.glob(os.path.join(config.SELECTED_DIR, f"{owner}_*")):
+        remove(path)
+    finished = []
+    with counting:
+        for job_id, job in jobs.items():
+            if job["owner"] != owner:
+                continue
+            if job["state"] in ("queued", "running"):
+                job["forget"] = True
+            else:
+                finished.append(job_id)
+    for job_id in finished:
+        delete_job(job_id)
+
+
+def clean_old_files(now=None):
+    """Deletes jobs TEMP_MINUTES after their output was made, plus selected clips and job folders that old
+    which no job owns (left by a crash). A queued or running job is never touched."""
+    if not config.TEMP_FILES:
+        return
+    now, limit = now or time.time(), config.TEMP_MINUTES * 60
+    with counting:
+        expired = [i for i, j in jobs.items() if j.get("done_at") and now - j["done_at"] >= limit]
+        known = set(jobs)
+    for job_id in expired:
+        delete_job(job_id)
+    for folder, is_job in ((config.JOBS_DIR, True), (config.SELECTED_DIR, False)):
+        if not os.path.isdir(folder):
+            continue
+        for name in os.listdir(folder):
+            path = os.path.join(folder, name)
+            try:
+                old = now - os.path.getmtime(path) >= limit
+            except OSError:
+                continue
+            if is_job and name not in known and old:
+                shutil.rmtree(path, ignore_errors=True)
+            elif not is_job and old:
+                remove(path)
+
+
+def wipe_all():
+    """Deletes every job and selected clip. Runs when the server starts and when it stops, so nothing a visitor
+    sent survives a restart, even one after a crash."""
+    for folder in (config.JOBS_DIR, config.SELECTED_DIR):
+        if os.path.isdir(folder):
+            for name in os.listdir(folder):
+                path = os.path.join(folder, name)
+                shutil.rmtree(path, ignore_errors=True) if os.path.isdir(path) else remove(path)
+    with counting:
+        jobs.clear()
 
 
 def keep_cleaning():
     while True:
         try:
-            clean_old_jobs()
+            clean_old_files()
         except OSError:
             traceback.print_exc()
-        time.sleep(3600)
+        time.sleep(60)
 
 
 def read_form(form, files, job_dir):
@@ -257,12 +329,17 @@ def worker(job_id, job_dir, params):
     with one_at_a_time:
         try:
             run_job(job_dir, params, lambda stage: job.update(stage=stage, state="running"))
-            job.update(state="done", stage=len(STAGES))
+            end = {"state": "done", "stage": len(STAGES)}
         except Exception as e:
             traceback.print_exc()
             # online, the details stay in the server log
-            job.update(state="failed", error="The run failed. Try again later, or try another clip."
-                       if config.PUBLIC else str(e))
+            end = {"state": "failed", "error": "The run failed. Try again later, or try another clip."
+                   if config.PUBLIC else str(e)}
+        with counting:   # the 30 minutes start now; forget_visitor checks the state under the same lock
+            job.update(end, done_at=time.time())
+            gone = job.get("forget")
+        if gone and config.TEMP_FILES:
+            delete_job(job_id)
 
 
 @app.context_processor
@@ -280,7 +357,8 @@ def guard():
             return redirect(url_for("login"))
         return jsonify(error="log in first"), 401
     if request.method == "POST" and config.APP_PASSWORD:
-        sent = request.headers.get("X-CSRF-Token", "")
+        # sendBeacon (used when the page is left) cannot set headers, so it sends the token as a form field
+        sent = request.headers.get("X-CSRF-Token") or request.form.get("csrf", "")
         if not hmac.compare_digest(sent, session.get("csrf", "")):
             return jsonify(error="this page has expired, so reload it"), 403
     return None
@@ -367,7 +445,8 @@ def index():
             groups[sport].setdefault(catalog.GROUP_LABELS[d["group"]], []).append((key, d["label"]))
     return render_template("index.html", groups=groups, levels=["beginner", "standard", "expert"], stages=STAGES,
                            library=library_rows(), csrf=session["csrf"], public=config.PUBLIC,
-                           max_mb=config.MAX_UPLOAD_MB, locked=bool(config.APP_PASSWORD))
+                           max_mb=config.MAX_UPLOAD_MB, locked=bool(config.APP_PASSWORD),
+                           temp_minutes=config.TEMP_MINUTES if config.TEMP_FILES else 0)
 
 
 @app.get("/library/<int:number>")
@@ -376,10 +455,10 @@ def library_video(number):
     if not clip:
         abort(404)
     try:
-        fetch_clip(clip)
+        path = clip_path(number, clip)
     except RuntimeError as e:
         return jsonify(error=str(e)), 502
-    return send_from_directory(config.VIDEOS_DIR, library_file(clip), conditional=True)
+    return send_from_directory(os.path.dirname(path), os.path.basename(path), conditional=True)
 
 
 @app.post("/run")
@@ -392,14 +471,13 @@ def start():
     if not picked and (not video or not video.filename.lower().endswith(".mp4")):
         return jsonify(error="upload an MP4 file"), 400
     try:
-        picked_path = fetch_clip(picked) if picked else None
+        picked_path = clip_path(chosen, picked) if picked else None
     except RuntimeError as e:
         return jsonify(error=str(e)), 400
     refused = reserve_job()
     if refused:
         return jsonify(error=refused), 429
-    if config.PUBLIC:
-        clean_old_jobs()
+    clean_old_files()
     job_id = uuid.uuid4().hex[:12]
     job_dir = os.path.join(config.JOBS_DIR, job_id)
     os.makedirs(job_dir)
@@ -433,6 +511,13 @@ def own_job(job_id):
     return job
 
 
+@app.post("/forget")
+def forget():
+    """Sent by the page as it unloads (refresh, close, leaving the site)."""
+    forget_visitor(session.get("visitor", ""))
+    return "", 204
+
+
 @app.get("/status/<job_id>")
 def status(job_id):
     result = {k: v for k, v in own_job(job_id).items() if k != "owner"}
@@ -449,7 +534,9 @@ def video(job_id):
     return send_from_directory(os.path.join(config.JOBS_DIR, job_id), "output.mp4", conditional=True)
 
 
-if config.PUBLIC:   # locally, old jobs are kept
+if config.TEMP_FILES:   # locally (TEMP_FILES=0 by default) jobs are kept as a record
+    wipe_all()   # anything left by a crash or a hard stop
+    atexit.register(wipe_all)
     threading.Thread(target=keep_cleaning, daemon=True).start()
 
 if __name__ == "__main__":

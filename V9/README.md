@@ -42,7 +42,7 @@ Unit tests (no real clips, no API calls): `pip install pytest`, then `python -m 
 | Huge or crafted uploads | 300 MB at most. ffprobe must read it as a video within 2 minutes, at most 1080p and 2 minutes long. Start and end must be real numbers of seconds |
 | Hung processes | ffprobe stops after 2 minutes and ffmpeg after 15; each Gemini call after 3 minutes |
 | Other people's results | A job's status and video are only shown to the login that started it; job IDs are random |
-| Leftover files | Jobs are deleted after 24 hours |
+| Visitors' files | Temporary (`TEMP_FILES`, see below): a visitor's clip, output and job files are deleted when they refresh or leave the page, when the server stops, or 30 minutes after the output is made |
 | Error details | The page shows a plain message; details go only to the server log |
 | API keys | Only from the Space's secrets. `.env` is never copied into the image, and keys never reach the browser |
 | Changing dependencies | Every package is pinned to a tested version |
@@ -79,6 +79,25 @@ A random password or key: `python -c "import secrets; print(secrets.token_urlsaf
 
 Limits of the free Space: it sleeps after about two days without visitors and takes a minute or two to wake, its disk
 is wiped on restart (jobs and the daily counts start again), and a run takes several minutes on its 2 CPUs.
+
+## Temporary files
+
+Online (`TEMP_FILES=1`, the default when `PUBLIC=1`) nothing a visitor sends or gets is kept:
+
+| When | What is deleted |
+|---|---|
+| The visitor refreshes, closes or leaves the page | Their selected YouTube clip, and their finished jobs (input, output video and every job file). A job still running is deleted the moment it ends |
+| The server stops | Everything. It is also wiped when the server starts, in case it crashed or lost power |
+| 30 minutes after the output video is made | That job, for visitors who simply stay on the page. Selected clips nobody ran go after 30 minutes too |
+
+A selected YouTube clip is downloaded for that visitor only (one at a time, into `selected/`). Clips packed with the
+app by `pack_clips.py` are part of the app, so they are never deleted. The page tells visitors to download the video to
+keep it.
+
+Leaving the page is reported by the browser as the page unloads. Phones can close a background tab without telling
+the page, so the 30-minute limit is what guarantees the deletion.
+
+On your laptop `TEMP_FILES` is off, so `jobs/` and `videos/library/` are kept as before. Set `TEMP_FILES=1` to try it.
 
 ## YouTube online
 

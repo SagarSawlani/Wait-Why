@@ -1,4 +1,5 @@
 import os
+import time
 import app as web
 import config
 
@@ -140,13 +141,104 @@ def test_pages_send_the_security_headers(monkeypatch, tmp_path):
     assert res.headers["X-Content-Type-Options"] == "nosniff"
 
 
-def test_old_jobs_are_deleted(monkeypatch, tmp_path):
+def temp_files(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "TEMP_FILES", True)
+    monkeypatch.setattr(config, "SELECTED_DIR", str(tmp_path / "selected"))
+
+
+def finished_job(owner, minutes_ago=0, state="done"):
+    job_id = os.urandom(6).hex()
+    os.makedirs(os.path.join(config.JOBS_DIR, job_id))
+    open(os.path.join(config.JOBS_DIR, job_id, "output.mp4"), "wb").close()
+    web.jobs[job_id] = {"state": state, "stage": 0, "error": "", "owner": owner,
+                        **({"done_at": time.time() - minutes_ago * 60} if state in ("done", "failed") else {})}
+    return job_id
+
+
+def exists(job_id):
+    return os.path.isdir(os.path.join(config.JOBS_DIR, job_id))
+
+
+def test_jobs_are_deleted_30_minutes_after_the_output(monkeypatch, tmp_path):
     online(monkeypatch, tmp_path)
-    old = os.path.join(config.JOBS_DIR, "aaaaaaaaaaaa")
-    os.makedirs(old)
-    os.utime(old, (0, 0))
-    web.clean_old_jobs()
-    assert not os.path.exists(old)
+    temp_files(monkeypatch, tmp_path)
+    fresh, old, failed, running = (finished_job("v", 5), finished_job("v", 31), finished_job("v", 31, "failed"),
+                                   finished_job("v", state="running"))
+    orphan = os.path.join(config.JOBS_DIR, "aaaaaaaaaaaa")   # left by a crash: no job owns it
+    os.makedirs(orphan)
+    os.utime(orphan, (0, 0))
+    web.clean_old_files()
+    assert exists(fresh) and exists(running)
+    assert not exists(old) and not exists(failed) and not os.path.exists(orphan)
+    assert old not in web.jobs and fresh in web.jobs
+
+
+def test_leaving_the_page_deletes_only_that_visitors_files(monkeypatch, tmp_path):
+    client = online(monkeypatch, tmp_path)
+    temp_files(monkeypatch, tmp_path)
+    token = log_in(client)
+    with client.session_transaction() as s:
+        me = s["visitor"]
+    mine, theirs = finished_job(me), finished_job("someone-else")
+    os.makedirs(config.SELECTED_DIR)
+    picked, other = (os.path.join(config.SELECTED_DIR, f"{who}_1.mp4") for who in (me, "someone-else"))
+    for path in (picked, other):
+        open(path, "wb").close()
+    assert client.post("/forget", data={"csrf": "forged"}).status_code == 403
+    assert exists(mine)
+    assert client.post("/forget", data={"csrf": token}).status_code == 204
+    assert not exists(mine) and not os.path.exists(picked)
+    assert exists(theirs) and os.path.exists(other)
+
+
+def test_a_job_still_running_is_deleted_when_it_ends(monkeypatch, tmp_path):
+    online(monkeypatch, tmp_path)
+    temp_files(monkeypatch, tmp_path)
+    job_id = finished_job("v", state="running")
+    web.forget_visitor("v")
+    assert exists(job_id) and web.jobs[job_id]["forget"]
+    web.worker(job_id, os.path.join(config.JOBS_DIR, job_id), {})
+    assert not exists(job_id) and job_id not in web.jobs
+
+
+def test_a_finished_job_gets_its_output_time(monkeypatch, tmp_path):
+    online(monkeypatch, tmp_path)
+    temp_files(monkeypatch, tmp_path)
+    job_id = finished_job("v", state="running")
+    web.worker(job_id, os.path.join(config.JOBS_DIR, job_id), {})
+    assert web.jobs[job_id]["state"] == "done" and time.time() - web.jobs[job_id]["done_at"] < 5
+
+
+def test_stopping_or_starting_the_server_wipes_everything(monkeypatch, tmp_path):
+    online(monkeypatch, tmp_path)
+    temp_files(monkeypatch, tmp_path)
+    job_id = finished_job("v")
+    os.makedirs(config.SELECTED_DIR)
+    open(os.path.join(config.SELECTED_DIR, "v_1.mp4"), "wb").close()
+    web.wipe_all()
+    assert not exists(job_id) and os.listdir(config.SELECTED_DIR) == [] and web.jobs == {}
+
+
+def test_a_library_clip_is_downloaded_for_this_visitor_only(monkeypatch, tmp_path):
+    client = online(monkeypatch, tmp_path)
+    temp_files(monkeypatch, tmp_path)
+    monkeypatch.setattr(web, "LIBRARY", web.LIBRARY + [
+        {"youtube": "abcdefghijk", "start": 0, "end": 5, "sport": "tennis", "decision": "ball_out", "description": "x"},
+        {"youtube": "bcdefghijkl", "start": 0, "end": 5, "sport": "tennis", "decision": "ball_out", "description": "y"}])
+    fetched = []
+
+    def fetch(clip, path=None):
+        fetched.append(path)
+        open(path, "wb").close()
+        return path
+    monkeypatch.setattr(web, "fetch_clip", fetch)
+    log_in(client)
+    assert client.get("/library/1").status_code == 200          # packed with the app: used as it is
+    assert fetched == [os.path.join(config.VIDEOS_DIR, "a.mp4")]
+    assert client.get("/library/2").status_code == 200
+    assert client.get("/library/3").status_code == 200
+    assert [os.path.basename(p).split("_")[1] for p in os.listdir(config.SELECTED_DIR)] == ["3.mp4"]   # one at a time
+    assert os.path.isfile(os.path.join(config.VIDEOS_DIR, "a.mp4"))
 
 
 def test_locally_there_is_no_password_and_no_limit(monkeypatch, tmp_path):

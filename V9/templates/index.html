@@ -318,6 +318,8 @@
         </div>
         <ol class="moments" id="moments"></ol>
         <p class="fine" id="source"></p>
+        {% if temp_minutes %}<p class="fine">This video and your clip are deleted when you refresh or leave this page,
+          or {{ temp_minutes }} minutes after the video was made. Download it to keep it.</p>{% endif %}
       </div>
     </section>
   </main>
@@ -624,6 +626,12 @@ function showResult(job, plan) {
     ? "AI-generated from the clip. Times are from your original clip." : "No moments were found with enough confidence, so the video shows the rule and a plain slow replay.";
   $("result").hidden = false;
 }
+// Leaving or refreshing the page deletes this visitor's clip and results on the server.
+window.addEventListener("pagehide", () => {
+  const data = new FormData();
+  data.append("csrf", csrf);
+  navigator.sendBeacon("/forget", data);
+});
 async function poll(job) {
   try {
     const res = await fetch(`/status/${job}`);
