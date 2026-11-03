@@ -104,3 +104,21 @@ def test_each_detection_step_uses_its_own_models(monkeypatch, tmp_path):
     monkeypatch.setattr(detect, "Clip", lambda path, width: frames)
     detect.detect("x", "bowled", {"sport": "cricket"}, str(tmp_path), 25)
     assert used == ["first", "second"]
+
+
+def test_a_run_ends_with_its_stage_times(monkeypatch, tmp_path, capsys):
+    from pipeline import run
+    monkeypatch.setattr(run, "stages", lambda job_dir, params, progress: [progress(i) for i in range(3)] and "out.mp4")
+    assert run.run_job(str(tmp_path), {}) == "out.mp4"
+    line = capsys.readouterr().out.strip().splitlines()[-1]
+    assert line.startswith("job done in") and "Normalize video" in line and "Explain the rule" in line
+
+    def boom(job_dir, params, progress):
+        progress(0)
+        raise RuntimeError("x")
+    monkeypatch.setattr(run, "stages", boom)
+    try:
+        run.run_job(str(tmp_path), {})
+    except RuntimeError:
+        pass
+    assert "job failed in" in capsys.readouterr().out

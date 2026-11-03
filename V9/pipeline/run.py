@@ -1,6 +1,6 @@
 """Runs all the stages for one job and saves each result in the job folder.
 params: sport, decision, level, date, format, notes, match_path, innings, over_ball, start, end"""
-import ctypes, ctypes.util, gc, json, os
+import ctypes, ctypes.util, gc, json, os, time
 import config
 import sports
 from pipeline import detect, normalize, plan, render, rules, spotlight, verify
@@ -57,12 +57,27 @@ def release_memory(stage):
 
 
 def run_job(job_dir, params, progress=lambda stage: None):
-    """progress(i) is called as stage i starts. Returns the path of the output video."""
-    step = progress
+    """progress(i) is called as stage i starts. Returns the path of the output video.
+    Ends with one log line giving each stage's time and the total, whether the run worked or failed."""
+    step, times = progress, []
 
     def progress(i):
+        times.append((STAGES[i], time.monotonic()))
         release_memory(STAGES[i])
         step(i)
+
+    start, outcome = time.monotonic(), "failed"
+    try:
+        out = stages(job_dir, params, progress)
+        outcome = "done"
+        return out
+    finally:
+        ends = [t for _, t in times[1:]] + [time.monotonic()]
+        parts = ", ".join(f"{name} {end - began:.0f} s" for (name, began), end in zip(times, ends))
+        print(f"  job {outcome} in {time.monotonic() - start:.0f} s: {parts}")
+
+
+def stages(job_dir, params, progress):
     source = os.path.join(job_dir, "input.mp4")
 
     progress(0)
