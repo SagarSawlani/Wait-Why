@@ -81,3 +81,9 @@ def test_low_memory_renders_with_the_fast_preset(monkeypatch):
     render.open_writer("o.mp4", 1920, 1080, "25/1")
     presets = [c[c.index("-preset") + 1] for c in calls]
     assert presets == ["ultrafast", "veryfast"]
+
+
+def test_detect_models_setting_reads_models_and_tries():
+    assert config.model_chain("gemini-3.5-flash-lite:3") == [("gemini-3.5-flash-lite", 3)]
+    assert config.model_chain(" a:2, b ,c:x") == [("a", 2), ("b", 1), ("c", 1)]
+    assert config.model_chain("") == []

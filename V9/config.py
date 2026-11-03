@@ -42,6 +42,21 @@ CALL_TIMEOUT = 180     # seconds; a Gemini call taking longer counts as a failed
 
 # Each model is tried this many times, in this order.
 DETECT_CHAIN = [("gemini-3.6-flash", 2), ("gemini-3.5-flash", 2), ("gemini-3.5-flash-lite", 1), ("gemini-3.8-flash", 1)]
+
+
+def model_chain(text):
+    """'model:tries,model:tries' as [(model, tries)]. Tries default to 1. Used by DETECT_MODELS."""
+    chain = []
+    for part in text.split(","):
+        name, _, tries = part.strip().partition(":")
+        if name:
+            chain.append((name.strip(), max(1, int(tries)) if tries.strip().isdigit() else 1))
+    return chain
+
+
+# DETECT_MODELS overrides the order for both detection passes and the zoomed check, e.g.
+# DETECT_MODELS=gemini-3.5-flash-lite:3 on the host. Unset (or empty) keeps DETECT_CHAIN above.
+DETECT_CHAIN = model_chain(os.environ.get("DETECT_MODELS", "")) or DETECT_CHAIN
 # Rule and caption text does not need vision, and this model has the larger free limit.
 TEXT_CHAIN = [("gemini-3.1-flash-lite", 2), ("gemini-3.5-flash-lite", 1)]
 
