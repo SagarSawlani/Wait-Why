@@ -52,7 +52,24 @@ Unit tests (no real clips, no API calls): `pip install pytest`, then `python -m 
 What it does not protect against: anyone with the password can share it, and logging out and in again gives a new
 per-visitor count (the daily total still holds). Change `APP_PASSWORD` in the Space's secrets to cut everyone off.
 
-## Deploy to a Hugging Face Space (free)
+## Deploy to Render (free)
+
+Hugging Face now needs a paid PRO plan for Docker Spaces, so Render is the free host. Its free plan has 512 MB of
+memory and 0.1 CPU: V9 fits (peak about 400 MB), but a run takes several minutes. It sleeps after 15 minutes without
+visitors, which also wipes every visitor's files, and the first visit after that waits about a minute for it to wake.
+
+1. Sign up at https://render.com with GitHub and allow it to read this repository.
+2. **New → Blueprint**, choose this repository and the branch with V9 on it. Render reads `render.yaml` at the
+   repository root.
+3. It asks for `GEMINI_API_KEY` and `APP_PASSWORD`. `SECRET_KEY` is generated for you.
+   Optional, later, under the service's **Environment**: `TYPESAFE_API_KEY`, `YT_COOKIES`, `DAILY_JOBS`.
+4. **Apply**. The first build takes a few minutes; the app is then at `https://why-this-decision.onrender.com`
+   (or with a suffix if the name is taken).
+
+Library clips are fetched from YouTube on first use (see "YouTube online"). Clips packed with `pack_clips.py` only
+reach Render if `V9/clips/` is committed, which it is not (it is in `.gitignore`).
+
+## Deploy to a Hugging Face Space (needs PRO)
 
 1. Optional but recommended, on your computer, from `V9`: `python pack_clips.py`. It copies the library clips into
    `clips/`, so they are in the image and never need YouTube online. Clips left out are fetched from YouTube on first use.

@@ -17,4 +17,5 @@ USER app
 ENV PUBLIC=1 ALLOW_FETCH=1 LOW_MEMORY=1 VIDEOS_DIR=/app/clips PYTHONUNBUFFERED=1
 EXPOSE 7860
 # One process, because the job list lives in memory; threads serve the page while a job runs.
-CMD ["gunicorn", "--workers", "1", "--threads", "8", "--timeout", "900", "--bind", "0.0.0.0:7860", "app:app"]
+# Hosts like Render pass the port in $PORT; Hugging Face uses 7860.
+CMD ["sh", "-c", "exec gunicorn --workers 1 --threads 8 --timeout 900 --bind 0.0.0.0:${PORT:-7860} app:app"]

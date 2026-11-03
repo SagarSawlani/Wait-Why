@@ -1,0 +1,17 @@
+# Render Blueprint for the V9 app (free plan). Create it from the Render dashboard: New > Blueprint > this repo.
+# Secrets marked sync: false are asked for once, in the dashboard; they are never stored in this repository.
+services:
+  - type: web
+    name: why-this-decision
+    runtime: docker
+    plan: free
+    dockerfilePath: ./V9/Dockerfile
+    dockerContext: ./V9
+    healthCheckPath: /healthz
+    envVars:
+      - key: GEMINI_API_KEY      # from a separate Google Cloud project with billing off
+        sync: false
+      - key: APP_PASSWORD        # at least 12 characters; the app will not start without it
+        sync: false
+      - key: SECRET_KEY          # keeps logins valid across restarts
+        generateValue: true
