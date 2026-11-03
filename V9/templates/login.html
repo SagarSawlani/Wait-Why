@@ -19,7 +19,6 @@
   button { width:100%; margin-top:14px; padding:11px; border:0; border-radius:6px; background:var(--accent); color:var(--on-accent);
            font:700 16px inherit; cursor:pointer; }
   .error { margin:12px 0 0; color:var(--bad); }
-  small { display:block; margin-top:16px; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -31,7 +30,6 @@
   <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
   <button type="submit">Log in</button>
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-  <small>If this page keeps coming back, open the app in its own browser tab.</small>
 </form>
 </body>
 </html>

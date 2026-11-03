@@ -132,6 +132,22 @@ YouTube often asks cloud servers to "sign in to confirm you're not a bot". If th
 If YouTube still refuses, packing the clips with `pack_clips.py` always works. YouTube changes often, so if
 fetching breaks, raise `yt-dlp` in `requirements.txt` to its newest release.
 
+## Quota alert
+
+When Gemini 3.6 Flash answers "quota exceeded", the app sends one alert per quota day through
+[ntfy](https://ntfy.sh) (free, no account): install the ntfy app, subscribe to the topic, and set on Render
+`NOTIFY_URL=https://ntfy.sh/<topic>`. Optional: `NOTIFY_EMAIL` (ntfy also e-mails it) and `NOTIFY_MODELS`
+(comma-separated models to watch, default `gemini-3.6-flash`). The alert gives the time, the last 6 characters of
+the key, and when the quota comes back (midnight Pacific, about 13:30 IST). Code: `pipeline/notify.py`.
+
+## Usage
+
+Each page view, login, run, result and refused run writes one `USAGE` JSON line to the server log. The visitor is
+the random id of their session, never an address. `python usage_report.py [days]` (with `RENDER_API_KEY` set) reads
+them from Render and prints page views, visitors, runs, outcomes, run times, sports and decisions, upload or
+library clip, the model behind the moments, and runs per day. Render keeps logs for a limited time on the free plan,
+so run the report regularly to keep a longer history.
+
 ## Memory
 
 Frames are read from the clip as each stage needs them (`pipeline/frames.py`), never the whole clip at once, and the

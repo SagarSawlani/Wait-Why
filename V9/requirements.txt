@@ -13,3 +13,5 @@ requests==2.34.2
 # yt-dlp cuts library clips from YouTube; the deno extra is the JavaScript runtime it needs for YouTube.
 # YouTube changes often: if fetching stops working, raise this to the newest release.
 yt-dlp[default,deno]==2026.10.26
+# time zones for the quota alert (the slim Docker image may have none)
+tzdata==2026.6

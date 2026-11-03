@@ -322,8 +322,29 @@ def read_form(form, files, job_dir):
     return p
 
 
+def log_usage(event, **fields):
+    """One USAGE line in the server log per page view, login, run and result. usage_report.py counts them.
+    The visitor is the random id of their session, never an address or a name."""
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    print("USAGE " + json.dumps({"event": event, "at": stamp, **fields}, separators=(",", ":")), flush=True)
+
+
+def models_used(job_dir):
+    """Which model answered each step, read from the job's own files (before they are deleted)."""
+    found = {}
+    for name, keys in (("detections.json", ("model", "check_model")), ("plan.json", ("caption_source",))):
+        try:
+            with open(os.path.join(job_dir, name), encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            continue
+        found.update({k: data[k] for k in keys if data.get(k)})
+    return found
+
+
 def worker(job_id, job_dir, params):
     job = jobs[job_id]
+    began = time.monotonic()
     with one_at_a_time:
         try:
             run_job(job_dir, params, lambda stage: job.update(stage=stage, state="running"))
@@ -333,6 +354,8 @@ def worker(job_id, job_dir, params):
             # online, the details stay in the server log
             end = {"state": "failed", "error": "The run failed. Try again later, or try another clip."
                    if config.PUBLIC else str(e)}
+        log_usage("result", job=job_id, visitor=job.get("owner", ""), outcome=end["state"],
+              seconds=round(time.monotonic() - began), **models_used(job_dir))
         with counting:   # the 30 minutes start now; forget_visitor checks the state under the same lock
             job.update(end, done_at=time.time())
             gone = job.get("forget")
@@ -418,7 +441,7 @@ def login():
             session.clear()   # a fresh session, so a cookie set before login is never reused
             session.permanent = True
             session["in"] = True
-            visitor()
+            log_usage("login", visitor=visitor())
             return redirect(url_for("index"))
         else:
             note_failed_login(address, now)
@@ -434,7 +457,7 @@ def logout():
 
 @app.get("/")
 def index():
-    visitor()
+    log_usage("page", visitor=visitor())
     groups = {}
     for sport in SPORTS:
         catalog = sports.decisions(sport)
@@ -474,6 +497,7 @@ def start():
         return jsonify(error=str(e)), 400
     refused = reserve_job()
     if refused:
+        log_usage("refused", visitor=visitor(), reason=refused)
         return jsonify(error=refused), 429
     clean_old_files()
     job_id = uuid.uuid4().hex[:12]
@@ -497,6 +521,8 @@ def start():
         return jsonify(error=str(e)), 400
     with counting:
         jobs[job_id] = {"state": "queued", "stage": 0, "error": "", "owner": visitor()}
+    log_usage("run", job=job_id, visitor=visitor(), sport=params["sport"], decision=params.get("decision") or "from match data",
+          clip=f"library {chosen}" if picked else "upload")
     threading.Thread(target=worker, args=(job_id, job_dir, params), daemon=True).start()
     return jsonify(job=job_id)
 

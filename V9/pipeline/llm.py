@@ -1,6 +1,7 @@
 """Gemini calls with a fallback chain. Every model is tried as many times as config says, in order."""
 import json, queue, threading, time
 import config
+from pipeline import notify
 
 RETRY_WAIT = 6   # seconds between attempts
 _client = None
@@ -67,6 +68,8 @@ def generate(chain, system, contents, check=None):
                     check(data)
                 return data, model
             except Exception as e:
+                if notify.is_quota_error(e):
+                    notify.quota_reached(model)
                 errors.append(f"{model} attempt {attempt + 1}: {str(e)[:160]}")
                 print("  " + errors[-1])
                 time.sleep(RETRY_WAIT)
