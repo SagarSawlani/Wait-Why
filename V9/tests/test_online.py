@@ -285,3 +285,20 @@ def test_bad_start_and_end_are_refused_and_not_counted(monkeypatch, tmp_path):
                                         "start": start, "end": end}, headers={"X-CSRF-Token": token})
         assert res.status_code == 400, (start, end)
     assert web.usage["total"] == 0 and os.listdir(config.JOBS_DIR) == []
+
+
+def test_explanations_are_always_for_beginners(monkeypatch, tmp_path):
+    client = online(monkeypatch, tmp_path)
+    token = log_in(client)
+    page = client.get("/").get_data(as_text=True)
+    assert "Explain it for" not in page and 'name="level"' not in page
+    seen = {}
+    monkeypatch.setattr(web, "run_job", lambda job_dir, params, progress: seen.update(params))
+    res = client.post("/run", data={"library": "1", "sport": "tennis", "decision": "ball_out", "level": "expert"},
+                      headers={"X-CSRF-Token": token})
+    assert res.status_code == 200
+    for _ in range(50):
+        if seen:
+            break
+        time.sleep(0.05)
+    assert seen["level"] == "beginner"

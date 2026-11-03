@@ -260,15 +260,6 @@
           </div>
         </div>
 
-        <fieldset class="step">
-          <legend><i>4</i>Explain it for</legend>
-          <div class="choices three">
-            {% for level in levels %}
-            <label class="choice"><input type="radio" name="level" value="{{ level }}"{% if loop.first %} checked{% endif %}><span>{{ level|capitalize }}</span></label>
-            {% endfor %}
-          </div>
-        </fieldset>
-
         <details data-sport="cricket">
           <summary>Use a Cricsheet ball</summary>
           <p class="hint">Download the match's JSON from <a href="https://cricsheet.org/matches/" target="_blank" rel="noopener">cricsheet.org</a>. Over.ball is the scorecard value. If you also chose a decision above, it must match this ball.</p>

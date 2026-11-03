@@ -295,11 +295,9 @@ def read_form(form, files, job_dir):
     if sport not in SPORTS:
         raise ValueError("unknown sport")
     catalog = sports.decisions(sport)
-    p = {"sport": sport, "decision": form.get("decision", ""), "level": form.get("level", "beginner"),
+    p = {"sport": sport, "decision": form.get("decision", ""), "level": "beginner",   # the product explains for beginners, so there is no choice
          "date": form.get("date", "").strip()[:40], "format": form.get("format", "").strip()[:40],
          "notes": form.get("notes", "").strip()[:500], "start": number(form.get("start")), "end": number(form.get("end"))}
-    if p["level"] not in catalog.LEVELS:
-        raise ValueError("unknown explanation level")
     if p["start"] is not None and p["end"] is not None and p["end"] <= p["start"]:
         raise ValueError("the end must be after the start")
     match = files.get("statsbomb" if sport == "football" else "cricsheet")
@@ -443,7 +441,7 @@ def index():
         groups[sport] = {}
         for key, d in catalog.DECISIONS.items():
             groups[sport].setdefault(catalog.GROUP_LABELS[d["group"]], []).append((key, d["label"]))
-    return render_template("index.html", groups=groups, levels=["beginner", "standard", "expert"], stages=STAGES,
+    return render_template("index.html", groups=groups, stages=STAGES,
                            library=library_rows(), csrf=session["csrf"], public=config.PUBLIC,
                            max_mb=config.MAX_UPLOAD_MB, locked=bool(config.APP_PASSWORD),
                            temp_minutes=config.TEMP_MINUTES if config.TEMP_FILES else 0)
