@@ -162,7 +162,8 @@ def open_writer(path, width, height, fps_rational):
     return subprocess.Popen(
         ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{width}x{height}",
          "-r", str(fps_rational), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20",
-         "-preset", "veryfast", *(config.X264_LOW_MEMORY if config.LOW_MEMORY else []), "-movflags", "+faststart", path],
+         "-preset", config.RENDER_PRESET_LOW_MEMORY if config.LOW_MEMORY else "veryfast",
+         *(config.X264_LOW_MEMORY if config.LOW_MEMORY else []), "-movflags", "+faststart", path],
         stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
 

@@ -24,6 +24,9 @@ MAX_CLIP_SECONDS = 120 # longer clips take too long and get a coarser frame step
 LOW_MEMORY = os.environ.get("LOW_MEMORY", "0") == "1"
 X264_LOW_MEMORY = ["-threads", "2", "-tune", "zerolatency"]
 OUTPUT_HEIGHT = 720    # with LOW_MEMORY, the explained video is rendered at this height at most
+# x264 preset for the explained video. On a 0.1 CPU host ultrafast halves the encoding time (measured at 720p:
+# 3.0 -> 1.6 s CPU for a 10 s clip) for a file about twice as big. The frozen clip itself keeps veryfast.
+RENDER_PRESET_LOW_MEMORY = "ultrafast"
 MAX_PIXELS = 1920 * 1080
 DAILY_JOBS = int(os.environ.get("DAILY_JOBS", "10"))        # all visitors together; keeps the free Gemini quota
 VISITOR_DAILY_JOBS = int(os.environ.get("VISITOR_DAILY_JOBS", "3"))

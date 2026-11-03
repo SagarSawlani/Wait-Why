@@ -66,3 +66,18 @@ def test_low_memory_renders_at_most_720p(monkeypatch):
     assert all(v % 2 == 0 for v in render.output_size(1918, 1078))
     monkeypatch.setattr(config, "LOW_MEMORY", False)
     assert render.output_size(1920, 1080) == (1920, 1080)
+
+
+def test_low_memory_renders_with_the_fast_preset(monkeypatch):
+    calls = []
+
+    class Fake:
+        def __init__(self, cmd, **kw):
+            calls.append(cmd)
+    monkeypatch.setattr(render.subprocess, "Popen", Fake)
+    monkeypatch.setattr(config, "LOW_MEMORY", True)
+    render.open_writer("o.mp4", 1280, 720, "25/1")
+    monkeypatch.setattr(config, "LOW_MEMORY", False)
+    render.open_writer("o.mp4", 1920, 1080, "25/1")
+    presets = [c[c.index("-preset") + 1] for c in calls]
+    assert presets == ["ultrafast", "veryfast"]
