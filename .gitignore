@@ -16,8 +16,9 @@ venv/
 *.weights
 
 # Videos and generated outputs
-videos/
+videos/**/.cache/
 *.mp4
+!videos/**/*.mp4
 V1/jobs/
 V2/jobs/
 V3/jobs/
