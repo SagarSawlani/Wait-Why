@@ -79,6 +79,10 @@
   .watch:hover { text-decoration:underline; }
   .watch svg { flex:none; transition:transform .15s; }
   .watch[aria-expanded=true] svg { transform:rotate(90deg); }
+  .clips td.link { white-space:nowrap; }
+  .watch-clip { margin-left:12px; padding:5px 12px; color:var(--accent); background:transparent; border:1px solid var(--accent);
+                border-radius:7px; font:600 13px var(--body); cursor:pointer; vertical-align:middle; }
+  .watch-clip:hover { color:var(--on-accent); background:var(--accent); }
   .select-clip { padding:7px 14px; color:var(--on-accent); background:var(--accent); border:1px solid var(--accent); border-radius:7px; font:600 14px var(--body); cursor:pointer; }
   .select-clip:hover { filter:brightness(1.08); }
   tr.chosen .select-clip { color:var(--good); background:transparent; border-color:var(--good); }
@@ -343,6 +347,7 @@
             <button class="watch" type="button" aria-expanded="false" data-youtube="{{ clip.youtube }}" data-start="{{ clip.start }}" data-end="{{ clip.end or '' }}">
               <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>youtu.be/{{ clip.youtube }}
             </button>
+            <button class="watch-clip" type="button" aria-label="Watch clip {{ loop.index }} here">Watch</button>
           </td>
           <td class="description">{{ clip.description }}</td>
           <td class="decision">{{ clip.label }}</td>
@@ -503,7 +508,10 @@ for (const name of ["dragleave", "drop"]) $("drop").addEventListener(name, () =>
 const clips = $("clips"), clipRows = $("clip-rows"), library = $("library");
 function closePlayer() {
   clipRows.querySelector(".player-row")?.remove();
-  clipRows.querySelector(".watch[aria-expanded=true]")?.setAttribute("aria-expanded", "false");
+  const open = clipRows.querySelector(".watch[aria-expanded=true]");
+  if (!open) return;
+  open.setAttribute("aria-expanded", "false");
+  open.closest("tr").querySelector(".watch-clip").textContent = "Watch";
 }
 function togglePlayer(button) {
   const row = button.closest("tr"), wasOpen = button.getAttribute("aria-expanded") === "true";
@@ -530,6 +538,7 @@ function togglePlayer(button) {
   player.append(cell);
   row.after(player);
   button.setAttribute("aria-expanded", "true");
+  row.querySelector(".watch-clip").textContent = "Close";
 }
 function toggleGroup(button) {
   const group = button.closest("tbody"), open = group.classList.toggle("open");
@@ -558,7 +567,7 @@ $("close-clips").addEventListener("click", () => clips.close());
 clips.addEventListener("close", closePlayer);   // removing the player also stops it
 clips.addEventListener("click", event => { if (event.target === clips) clips.close(); });
 clipRows.addEventListener("click", event => {
-  const group = event.target.closest(".group-toggle"), watch = event.target.closest(".watch"), select = event.target.closest(".select-clip");
+  const group = event.target.closest(".group-toggle"), watch = event.target.closest(".watch") || event.target.closest(".watch-clip")?.closest("tr").querySelector(".watch"), select = event.target.closest(".select-clip");
   if (group) toggleGroup(group);
   else if (watch) togglePlayer(watch);
   else if (select) selectClip(select.closest("tr"));
