@@ -127,10 +127,10 @@ Other free options considered: Qwen3-VL (small size, Kaggle/Colab), TimeLens-8B 
   free plan** (512 MB, 0.1 CPU) via `render.yaml` at the repo root (builds `V9/Dockerfile`, binds `$PORT`). V9 was cut
   to about 400 MB peak (`pipeline/frames.py` reads frames as needed; `LOW_MEMORY=1` for x264) and deletes each
   visitor's files on page leave, server stop, or 30 min after output (`TEMP_FILES`). Work is on branch
-  `claude/relaxed-archimedes-64m0dr`. Next: with `RENDER_API_KEY` in the environment and `api.render.com` allowed,
-  create the free Docker web service from this repo and branch with Render's REST API, set `GEMINI_API_KEY` and
-  `APP_PASSWORD` only if the user put them in the environment (never ask for keys in chat), deploy, and read the
-  build logs. The user's Hugging Face login was a device login in an earlier session and is not needed for Render.
+  `claude/relaxed-archimedes-64m0dr`. **Live since 2026-11-03 at https://why-this-decision.onrender.com**
+  (Render service `srv-dbl0ol61egvs7398ejlg`, Singapore, free plan, auto-deploy off: deploy by API or dashboard).
+  Its env vars (`APP_PASSWORD`, `GEMINI_API_KEY`, `TYPESAFE_API_KEY`, `SECRET_KEY`) are set in Render only, never in
+  the repo. The user should rotate the keys and the Render API key that were pasted in chat.
 - **`V7/` is the latest pipeline: two-pass detection and 3.6 Flash first. Results are in `V7/RESULTS.md`.**
 - **`V6/` is the main version; see `V6/README.md`.** It runs on port 5001. V1 to V5 are no longer in the working folder; their committed code is in git.
 - **`V2/` is the multi-sport build: `sports/<sport>/` holds all sport-specific code.** V1 stays as the cricket demo.
