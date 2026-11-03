@@ -1,8 +1,0 @@
-.env
-.env.*
-*.key
-jobs/
-tests/
-__pycache__/
-*.py[cod]
-.pytest_cache/
