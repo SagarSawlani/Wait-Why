@@ -1,0 +1,17 @@
+{
+ "title": "Penalty Kick",
+ "summary": "The referee awards a free shot at goal after a foul happens inside the penalty area.",
+ "conditions": [
+  "A foul occurs in the penalty area",
+  "The foul is against an opponent"
+ ],
+ "exceptions": [
+  "Handball by a goalie inside their area"
+ ],
+ "citations": [
+  "12.1"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "2026_27",
+ "level": "beginner"
+}
