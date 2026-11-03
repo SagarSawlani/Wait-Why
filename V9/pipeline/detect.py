@@ -103,7 +103,7 @@ def validate(decision, merged, frame_count, sport="cricket"):
     return sorted(kept, key=lambda m: m["frame"]), rejected
 
 
-def ask(frames, step, sheet_dir, decision, event, runs=None, first=0, last=None):
+def ask(frames, step, sheet_dir, decision, event, runs=None, first=0, last=None, chain=None):
     """One pass over frames first to last. Returns the validated moments, the rejected ones and the model."""
     idxs, sheets = build_sheets(frames, step, sheet_dir, first, last)
     sport = event["sport"]
@@ -113,7 +113,7 @@ def ask(frames, step, sheet_dir, decision, event, runs=None, first=0, last=None)
     images = [llm.image(p) for p in sheets]   # the JPEG bytes as they are; no decoded copy in memory
     replies, models = [], []
     for _ in range(runs or config.DETECT_RUNS):
-        data, model = llm.generate(config.DETECT_CHAIN, prompts.DETECT_SYSTEM, [prompt] + images)
+        data, model = llm.generate(chain or config.DETECT_CHAIN, prompts.DETECT_SYSTEM, [prompt] + images)
         replies.append(read_run(data, keys, idxs))
         models.append(model)
     # models are never mixed inside one median
@@ -135,13 +135,14 @@ def detect(clip, decision, event, job_dir, fps, runs=None):
     frames = Clip(clip, config.CELL_WIDTH)
     step = choose_step(len(frames))
     sheet_dir = os.path.join(job_dir, "sheets")
-    moments, rejected, model, step = ask(frames, step, sheet_dir, decision, event, runs)
+    moments, rejected, model, step = ask(frames, step, sheet_dir, decision, event, runs, chain=config.PASS1_CHAIN)
     window = refine_window(moments, step, len(frames))
     if window:
         fine = max(config.FRAME_STEP, math.ceil((window[1] - window[0] + 1) / config.MAX_CELLS))
         if fine < step:
             try:
-                better, dropped, model2, step2 = ask(frames, fine, os.path.join(job_dir, "sheets_fine"), decision, event, runs, *window)
+                better, dropped, model2, step2 = ask(frames, fine, os.path.join(job_dir, "sheets_fine"), decision, event, runs, *window,
+                                                    chain=config.PASS2_CHAIN)
                 if len(better) >= len(moments):   # a fine pass that loses moments is a worse answer
                     moments, rejected, model, step = better, dropped, model2, step2
             except RuntimeError as e:

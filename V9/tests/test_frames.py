@@ -87,3 +87,20 @@ def test_detect_models_setting_reads_models_and_tries():
     assert config.model_chain("gemini-3.5-flash-lite:3") == [("gemini-3.5-flash-lite", 3)]
     assert config.model_chain(" a:2, b ,c:x") == [("a", 2), ("b", 1), ("c", 1)]
     assert config.model_chain("") == []
+
+
+def test_each_detection_step_uses_its_own_models(monkeypatch, tmp_path):
+    from pipeline import detect
+    used = []
+    monkeypatch.setattr(config, "PASS1_CHAIN", [("first", 1)])
+    monkeypatch.setattr(config, "PASS2_CHAIN", [("second", 1)])
+
+    def fake_generate(chain, system, contents, check=None):
+        used.append(chain[0][0])
+        return {"moments": {"release": {"frame": 60, "confidence": 0.9}, "stumps_hit": {"frame": 150, "confidence": 0.9}}}, chain[0][0]
+    monkeypatch.setattr(detect.llm, "generate", fake_generate)
+    monkeypatch.setattr(detect.llm, "image", lambda p: p)
+    frames = [np.zeros((36, 64, 3), np.uint8) for _ in range(600)]
+    monkeypatch.setattr(detect, "Clip", lambda path, width: frames)
+    detect.detect("x", "bowled", {"sport": "cricket"}, str(tmp_path), 25)
+    assert used == ["first", "second"]

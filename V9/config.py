@@ -57,6 +57,11 @@ def model_chain(text):
 # DETECT_MODELS overrides the order for both detection passes and the zoomed check, e.g.
 # DETECT_MODELS=gemini-3.5-flash-lite:3 on the host. Unset (or empty) keeps DETECT_CHAIN above.
 DETECT_CHAIN = model_chain(os.environ.get("DETECT_MODELS", "")) or DETECT_CHAIN
+# One step at a time, each falling back to DETECT_CHAIN: the first detection pass, the second (finer) pass,
+# and the zoomed check. E.g. DETECT_MODELS_PASS1=gemini-3.6-flash:3, CHECK_MODELS=gemini-3.5-flash-lite:3
+PASS1_CHAIN = model_chain(os.environ.get("DETECT_MODELS_PASS1", "")) or DETECT_CHAIN
+PASS2_CHAIN = model_chain(os.environ.get("DETECT_MODELS_PASS2", "")) or DETECT_CHAIN
+CHECK_CHAIN = model_chain(os.environ.get("CHECK_MODELS", "")) or DETECT_CHAIN
 # Rule and caption text does not need vision, and this model has the larger free limit.
 TEXT_CHAIN = [("gemini-3.1-flash-lite", 2), ("gemini-3.5-flash-lite", 1)]
 

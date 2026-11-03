@@ -185,7 +185,7 @@ def verify(clip, decision, event, detections, job_dir, fps):
     shape = ", ".join(f'"{k}": {{"frame": 0, "confidence": 0.0, "evidence": ""}}' for k in windows)
     prompt = "Moments:\n" + "\n".join(lines) + f'\n\nReturn only JSON: {{"moments": {{{shape}}}}}'
     try:
-        data, model = llm.generate(config.DETECT_CHAIN, SYSTEM, [prompt] + [llm.image(p) for p in paths])
+        data, model = llm.generate(config.CHECK_CHAIN, SYSTEM, [prompt] + [llm.image(p) for p in paths])
     except RuntimeError as e:
         print(f"  keeping the first answers: {str(e)[:200]}")
         return detections
