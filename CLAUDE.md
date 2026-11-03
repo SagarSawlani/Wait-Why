@@ -127,8 +127,9 @@ Other free options considered: Qwen3-VL (small size, Kaggle/Colab), TimeLens-8B 
   free plan** (512 MB, 0.1 CPU) via `render.yaml` at the repo root (builds `V9/Dockerfile`, binds `$PORT`). V9 was cut
   to about 400 MB peak (`pipeline/frames.py` reads frames as needed; `LOW_MEMORY=1` for x264) and deletes each
   visitor's files on page leave, server stop, or 30 min after output (`TEMP_FILES`). Work is on branch
-  `claude/relaxed-archimedes-64m0dr`. **Live since 2026-11-03 at https://why-this-decision.onrender.com**
-  (Render service `srv-dbl0ol61egvs7398ejlg`, Singapore, free plan, auto-deploy off: deploy by API or dashboard).
+  `claude/relaxed-archimedes-64m0dr`. **Live at https://wait-why.onrender.com** (Render service `srv-dbl6lkec6qcc73ai5jk0`, Singapore, free plan,
+  builds `main`, auto-deploy off: deploy by API or dashboard). The first service, why-this-decision.onrender.com
+  (`srv-dbl0ol61egvs7398ejlg`), was replaced on 2026-11-04 to get the new address.
   Its env vars (`APP_PASSWORD`, `GEMINI_API_KEY`, `TYPESAFE_API_KEY`, `SECRET_KEY`) are set in Render only, never in
   the repo. The user should rotate the keys and the Render API key that were pasted in chat.
 - **V9 is the only version in the working tree (2026-11-04).** V1 to V8 were removed from `main`; their code is in git

@@ -64,7 +64,7 @@ that often, so it stays awake; this uses about 720 of the plan's 750 free hours 
    repository root.
 3. It asks for `GEMINI_API_KEY` and `APP_PASSWORD`. `SECRET_KEY` is generated for you.
    Optional, later, under the service's **Environment**: `TYPESAFE_API_KEY`, `YT_COOKIES`, `DAILY_JOBS`.
-4. **Apply**. The first build takes a few minutes; the app is then at `https://why-this-decision.onrender.com`
+4. **Apply**. The first build takes a few minutes; the app is then at `https://wait-why.onrender.com`
    (or with a suffix if the name is taken).
 
 Library clips are fetched from YouTube on first use (see "YouTube online"). Clips packed with `pack_clips.py` only

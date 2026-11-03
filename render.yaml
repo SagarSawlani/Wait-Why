@@ -2,7 +2,7 @@
 # Secrets marked sync: false are asked for once, in the dashboard; they are never stored in this repository.
 services:
   - type: web
-    name: why-this-decision
+    name: wait-why
     runtime: docker
     plan: free
     dockerfilePath: ./V9/Dockerfile

@@ -11,7 +11,7 @@ returns a short video that explains it for a beginner:
 It works for **cricket, football, basketball and tennis**: 75 decisions in all, from LBW and no balls to offside,
 charging, foot faults and electronic line calls.
 
-**Live app:** https://why-this-decision.onrender.com (password-protected; the password is shared with evaluators
+**Live app:** https://wait-why.onrender.com (password-protected; the password is shared with evaluators
 separately). Everything runs live: each clip is analysed when you press the button, nothing is precomputed. A run
 takes about 2 to 4 minutes on the free server.
 
