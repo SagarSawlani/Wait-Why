@@ -1,0 +1,15 @@
+{
+ "title": "Goaltending",
+ "summary": "Players cannot touch the ball while it has a chance to score.",
+ "conditions": [
+  "Ball is above the ring",
+  "Ball is on its downward flight",
+  "Ball has an opportunity to score"
+ ],
+ "citations": [
+  "11.1"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "nba_2026_27",
+ "level": "beginner"
+}

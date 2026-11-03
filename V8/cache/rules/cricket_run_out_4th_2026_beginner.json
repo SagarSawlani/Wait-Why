@@ -1,0 +1,14 @@
+{
+ "title": "Run out",
+ "summary": "A batter is out if they are away from safety and the wicket is broken.",
+ "conditions": [
+  "batter is out of safety",
+  "wicket is fairly broken"
+ ],
+ "citations": [
+  "38.1"
+ ],
+ "source": "gemini-3.5-flash-lite",
+ "edition": "4th_2026",
+ "level": "beginner"
+}

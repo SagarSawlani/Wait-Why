@@ -1,0 +1,22 @@
+{
+ "title": "Offside Rule",
+ "summary": "You are offside if you join a play while ahead of the defenders.",
+ "conditions": [
+  "You are in the opponent's half",
+  "Nearer to the goal than the ball",
+  "Nearer to the goal than second-last opponent",
+  "You get involved in the play"
+ ],
+ "exceptions": [
+  "Receiving from a goal kick or throw-in",
+  "Receiving directly from a corner kick"
+ ],
+ "citations": [
+  "11.1",
+  "11.2",
+  "11.3"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "2026_27",
+ "level": "beginner"
+}

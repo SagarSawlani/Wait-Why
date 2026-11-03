@@ -120,7 +120,8 @@ Other free options considered: Qwen3-VL (small size, Kaggle/Colab), TimeLens-8B 
 
 ## 7. Where things stand right now
 
-- **`V7/` is the latest version: two-pass detection and 3.6 Flash first. Results are in `V7/RESULTS.md`.**
+- **`V8/` is V7 made safe to put online (Hugging Face Docker Space): password, CSRF, daily job caps, upload checks, packed clips. See `V8/README.md`.** Locally it behaves like V7.
+- **`V7/` is the latest pipeline: two-pass detection and 3.6 Flash first. Results are in `V7/RESULTS.md`.**
 - **`V6/` is the main version; see `V6/README.md`.** It runs on port 5001. V1 to V5 are no longer in the working folder; their committed code is in git.
 - **`V2/` is the multi-sport build: `sports/<sport>/` holds all sport-specific code.** V1 stays as the cricket demo.
 - **`V1/` is the demo build; see `V1/README.md`.** Flask page + pipeline, 24 umpire decisions in `V1/decisions.py`.

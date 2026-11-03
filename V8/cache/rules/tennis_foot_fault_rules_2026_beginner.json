@@ -1,0 +1,15 @@
+{
+ "title": "Foot Fault",
+ "summary": "The server must stay behind the back line before hitting the ball.",
+ "conditions": [
+  "Do not walk or run",
+  "Do not touch the back line",
+  "Stay within the court side marks"
+ ],
+ "citations": [
+  "18.1"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "rules_2026",
+ "level": "beginner"
+}

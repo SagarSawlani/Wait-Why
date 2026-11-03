@@ -1,0 +1,16 @@
+{
+ "title": "Bowled",
+ "summary": "The batter is out if the ball hits their wooden stumps.",
+ "conditions": [
+  "The ball hits the stumps",
+  "The delivery is not a No ball",
+  "The ball has not touched another player"
+ ],
+ "citations": [
+  "32.1",
+  "32.2"
+ ],
+ "source": "gemini-3.1-flash-lite",
+ "edition": "4th_2026",
+ "level": "beginner"
+}
