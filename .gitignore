@@ -18,6 +18,10 @@ venv/
 # Videos and generated outputs
 videos/
 *.mp4
+# library clips packed for the online app (pack_clips.py); YouTube blocks cloud servers
+!V9/clips/
+!V9/clips/**/
+!V9/clips/**/*.mp4
 V1/jobs/
 V2/jobs/
 V3/jobs/
@@ -28,7 +32,6 @@ V7/jobs/
 V8/jobs/
 V8/clips/
 V9/jobs/
-V9/clips/
 V9/selected/
 tests/out/
 tests/crop1/
