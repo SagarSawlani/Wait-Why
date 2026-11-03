@@ -11,7 +11,7 @@ LIBRARY_PATH = os.path.join(ROOT, "library.json")      # the "Select from here" 
 VIDEOS_DIR = os.path.join(os.path.dirname(ROOT), "videos")   # library "file" paths start here
 FETCH_TIMEOUT = 180    # seconds to cut one library clip from YouTube
 
-CALL_TIMEOUT = 60      # seconds; a Gemini call taking longer counts as a failed attempt
+CALL_TIMEOUT = 180     # seconds; a Gemini call taking longer counts as a failed attempt. Full-size sheets need the time
 
 # Each model is tried this many times, in this order.
 DETECT_CHAIN = [("gemini-3.6-flash", 2), ("gemini-3.5-flash", 2), ("gemini-3.5-flash-lite", 1), ("gemini-3.8-flash", 1)]
@@ -24,7 +24,7 @@ MAX_CELLS = 120        # longer clips use a bigger step
 REFINE_MARGIN = 6      # cells of context either side of the moments in the second, finer pass
 SHEET_COLS = 4
 SHEET_ROWS = 3
-CELL_WIDTH = 480
+CELL_WIDTH = None     # frames go on the sheets at the clip's own size; small things like the ball need it
 MIN_CONFIDENCE = 0.3   # a moment below this is left out of the replay
 
 MARK_MIN_SCORE = 0.5   # Jev's presence score needed before a marker is drawn

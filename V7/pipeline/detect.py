@@ -19,7 +19,9 @@ def load_frames(video, width):
         if not ok:
             break
         h, w = f.shape[:2]
-        frames.append(cv2.resize(f, (width, int(h * width / w)), interpolation=cv2.INTER_AREA))
+        if width and w > width:   # None keeps the clip's own size
+            f = cv2.resize(f, (width, int(h * width / w)), interpolation=cv2.INTER_AREA)
+        frames.append(f)
     cap.release()
     if not frames:
         raise ValueError("could not read any frames from the clip")

@@ -36,6 +36,7 @@ Each run is saved in `jobs/<id>/`: `clip.mp4`, `event.json`, `rule.json`, `detec
 - `config.py`: models, fallback order, pause length, slow-motion speed.
 
 Models: detection and the zoomed check try `gemini-3.6-flash` twice, `gemini-3.5-flash` twice, `gemini-3.5-flash-lite` once, then `gemini-3.8-flash`, which is often overloaded.
+Frames go to Gemini at the clip's own size, so calls can take up to 3 minutes.
 Rule and caption text uses `gemini-3.1-flash-lite`.
 
 ## The clip table

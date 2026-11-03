@@ -543,3 +543,14 @@ def test_sheets_can_cover_part_of_a_clip(tmp_path):
     frames = [np.zeros((20, 40, 3), np.uint8) for _ in range(30)]
     idxs, sheets = detect.build_sheets(frames, 2, str(tmp_path), 10, 16)
     assert idxs == [10, 12, 14, 16] and len(sheets) == 1
+
+
+def test_frames_keep_their_size_unless_a_width_is_set(tmp_path):
+    import cv2
+    src = str(tmp_path / "c.avi")
+    writer = cv2.VideoWriter(src, cv2.VideoWriter_fourcc(*"MJPG"), 10, (320, 180))
+    for _ in range(3):
+        writer.write(np.zeros((180, 320, 3), np.uint8))
+    writer.release()
+    assert detect.load_frames(src, None)[0].shape[:2] == (180, 320)
+    assert detect.load_frames(src, 160)[0].shape[:2] == (90, 160)

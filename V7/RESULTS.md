@@ -64,3 +64,14 @@ Times were 30 to 110 seconds per clip on Flash-Lite. Two runs were cut by the PC
 
 3.8 Flash moved to the end of the order, since it rarely answers.
 Full resolution to Gemini scored better on small-object moments in a test, but doubled run time and is not built in yet.
+
+## Full resolution, 4 sports x 3 models (one run each)
+
+| Model | Cricket bowled | Football Burnley | Tennis Sabalenka | Basketball charging | Time per clip |
+|---|---|---|---|---|---|
+| 3.6 Flash | release 3, stumps 15, bails 16 | 294 / 323 / 336, all right | 99 / 113 | contact 169 (live angle of the same charge) | 60 to 262 s |
+| 3.5 Flash | release 4, stumps and bails rejected | pass 271 (18 early), rest right | 100 / 118 | contact 630 | 55 to 123 s |
+| 3.5 Flash-Lite | release 4, stumps 25, bails 25 | pass 282 (7 early), rest right | 104 / 118 | contact 620 | 32 to 78 s |
+
+V7 now sends frames at the clip's own size (`CELL_WIDTH = None`) and waits up to 180 s per call.
+One check run on real V7 afterwards fell back to 3.5 Flash and picked the shot at 114, so single runs still vary.
