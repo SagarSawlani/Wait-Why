@@ -56,3 +56,13 @@ def test_low_memory_changes_only_the_encoder_settings(monkeypatch):
     small = normalize.encode_command("a.mp4", "b.mp4", info)
     assert [x for x in small if x not in config.X264_LOW_MEMORY] == plain
     assert "zerolatency" in small and "zerolatency" not in plain
+
+
+def test_low_memory_renders_at_most_720p(monkeypatch):
+    monkeypatch.setattr(config, "LOW_MEMORY", True)
+    assert render.output_size(1920, 1080) == (1280, 720)
+    assert render.output_size(1280, 720) == (1280, 720)
+    assert render.output_size(640, 360) == (640, 360)
+    assert all(v % 2 == 0 for v in render.output_size(1918, 1078))
+    monkeypatch.setattr(config, "LOW_MEMORY", False)
+    assert render.output_size(1920, 1080) == (1920, 1080)

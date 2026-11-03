@@ -166,8 +166,17 @@ def open_writer(path, width, height, fps_rational):
         stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
+def output_size(width, height):
+    """The output video's size. Low-memory hosts get at most OUTPUT_HEIGHT lines (even numbers, for H.264):
+    drawing on and encoding a 1080p video was the biggest memory use of a run. Detection is unaffected."""
+    if not config.LOW_MEMORY or height <= config.OUTPUT_HEIGHT:
+        return width, height
+    return int(width * config.OUTPUT_HEIGHT / height) // 2 * 2, config.OUTPUT_HEIGHT
+
+
 def render(clip, plan, meta, out_path):
-    width, height, fps = meta["width"], meta["height"], meta["fps"]
+    width, height = output_size(meta["width"], meta["height"])
+    fps = meta["fps"]
     frame_count = max(meta.get("frames") or 0, 1)
     first, last = replay_window(plan, fps, frame_count)
     steps = timeline(plan, first, last)
@@ -186,9 +195,16 @@ def render(clip, plan, meta, out_path):
         cap = cv2.VideoCapture(clip)
         index, active = 0, None
         while True:
+            if index < first:   # frames before the replay are skipped without being converted
+                if not cap.grab():
+                    break
+                index += 1
+                continue
             ok, frame = cap.read()
             if not ok or index > last:
                 break
+            if frame.shape[1] != width or frame.shape[0] != height:
+                frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
             if index >= first:
                 for s in by_frame.get(index, []):
                     active = s
